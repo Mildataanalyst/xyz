@@ -6,379 +6,202 @@
   <meta name="theme-color" content="#111111" />
   <title>YouTube → PDF</title>
   <style>
-    :root { --bg:#f7f7f5; --card:#fff; --text:#111; --muted:#707070; --border:#deded9; --accent:#111; }
-    * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; padding:24px 16px 48px; }
-    main { width:min(560px,100%); margin:0 auto; }
-    h1 { font-size:34px; line-height:1.05; letter-spacing:-1.4px; margin:0 0 8px; }
-    .sub { color:var(--muted); font-size:15px; line-height:1.5; margin:0 0 24px; }
-    .card { background:var(--card); border:1px solid var(--border); border-radius:22px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,.04); }
-    label { display:block; font-size:13px; font-weight:650; margin:0 0 8px; }
-    input,select { width:100%; border:1px solid var(--border); background:#fff; color:#111; border-radius:14px; font:inherit; padding:14px 15px; outline:none; }
-    input:focus,select:focus { border-color:#999; }
-    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .group { margin-bottom:14px; }
-    button { width:100%; border:0; border-radius:14px; padding:15px 18px; background:var(--accent); color:#fff; font:inherit; font-weight:700; cursor:pointer; margin-top:4px; }
-    button:disabled { opacity:.5; cursor:not-allowed; }
-    .status { min-height:22px; font-size:13px; color:var(--muted); margin-top:12px; }
-    details { margin-top:15px; border-top:1px solid var(--border); padding-top:15px; }
-    summary { cursor:pointer; color:var(--muted); font-size:13px; }
-    .small { font-size:12px; color:var(--muted); line-height:1.45; margin-top:8px; }
-    .preview { margin-top:14px; white-space:pre-wrap; max-height:220px; overflow:auto; border-top:1px solid var(--border); padding-top:14px; font-size:14px; line-height:1.55; display:none; }
-    .footer { text-align:center; color:#9a9a94; font-size:11px; margin-top:14px; }
-
-    .history { margin-top:26px; }
-    .history-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
-    .history-head h2 { margin:0; font-size:19px; letter-spacing:-.35px; }
-    .clear-btn { width:auto; margin:0; padding:7px 10px; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--muted); font-size:12px; font-weight:650; }
-    .history-list { display:flex; flex-direction:column; gap:9px; }
-    .history-empty { color:var(--muted); font-size:13px; padding:17px 2px; }
-    .history-item { background:#fff; border:1px solid var(--border); border-radius:16px; padding:14px; }
-    .history-title { font-size:14px; line-height:1.35; font-weight:700; margin:0 0 5px; overflow-wrap:anywhere; }
-    .history-meta { color:var(--muted); font-size:11px; margin-bottom:11px; }
-    .history-actions { display:grid; grid-template-columns:1fr auto; gap:8px; }
-    .history-download { margin:0; padding:10px 12px; border-radius:11px; font-size:13px; }
-    .history-delete { width:auto; margin:0; padding:10px 12px; border:1px solid var(--border); background:#fff; color:var(--muted); border-radius:11px; font-size:13px; }
-
-    @media (max-width:420px) {
-      .row { grid-template-columns:1fr; gap:0; }
-      h1 { font-size:32px; }
-    }
+    :root{--bg:#f7f7f5;--card:#fff;--text:#111;--muted:#707070;--border:#deded9;--soft:#efefeb;--accent:#111}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:24px 16px 48px}
+    main{width:min(580px,100%);margin:0 auto}
+    h1{font-size:34px;line-height:1.05;letter-spacing:-1.4px;margin:0 0 8px}
+    h2{font-size:19px;letter-spacing:-.35px;margin:0}
+    .sub{color:var(--muted);font-size:15px;line-height:1.5;margin:0 0 20px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.04)}
+    .tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--soft);border-radius:13px;padding:3px;margin-bottom:18px}
+    .tab{margin:0;background:transparent;color:#555;padding:10px 8px;border-radius:10px}
+    .tab.active{background:#fff;color:#111;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    label{display:block;font-size:13px;font-weight:700;margin:0 0 8px}
+    input,select{width:100%;border:1px solid var(--border);background:#fff;color:#111;border-radius:14px;font:inherit;padding:14px 15px;outline:none}
+    input:focus,select:focus{border-color:#999}
+    .group{margin-bottom:14px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    button{width:100%;border:0;border-radius:14px;padding:14px 18px;background:var(--accent);color:#fff;font:inherit;font-weight:700;cursor:pointer;margin-top:4px}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .secondary{background:var(--soft);color:#111}
+    .status{min-height:20px;font-size:13px;color:var(--muted);margin-top:11px;line-height:1.4}
+    .pane{display:none}.pane.active{display:block}
+    .results{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+    .result{display:grid;grid-template-columns:92px 1fr;gap:11px;align-items:center;border:1px solid var(--border);border-radius:15px;padding:9px;background:#fff}
+    .result.channel{grid-template-columns:52px 1fr auto;cursor:pointer}
+    .thumb{width:92px;aspect-ratio:16/9;border-radius:9px;object-fit:cover;background:#eee}
+    .avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#eee}
+    .rtitle{font-size:13px;font-weight:750;line-height:1.32;margin-bottom:5px}
+    .rmeta{font-size:11px;color:var(--muted);line-height:1.35}
+    .pick{width:auto;margin:0;padding:9px 11px;border-radius:10px;font-size:12px}
+    .selected-channel{display:flex;gap:11px;align-items:center;padding:11px;border:1px solid var(--border);border-radius:15px;margin-bottom:14px}
+    .selected-channel .info{flex:1;min-width:0}.selected-channel .name{font-size:14px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .change{width:auto;margin:0;padding:8px 10px;background:transparent;color:var(--muted);border:1px solid var(--border);font-size:12px}
+    .video-btn{margin-top:9px;padding:9px 10px;border-radius:10px;font-size:12px}
+    details{margin-top:16px;border-top:1px solid var(--border);padding-top:15px}
+    summary{cursor:pointer;color:var(--muted);font-size:13px}
+    .small{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}
+    .settings{margin-top:17px;padding-top:15px;border-top:1px solid var(--border)}
+    .history{margin-top:26px}.history-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+    .clear-btn{width:auto;margin:0;padding:7px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font-size:12px}
+    .history-list{display:flex;flex-direction:column;gap:9px}.history-empty{color:var(--muted);font-size:13px;padding:17px 2px}
+    .history-item{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px}.history-title{font-size:14px;line-height:1.35;font-weight:750;margin:0 0 5px;overflow-wrap:anywhere}.history-meta{color:var(--muted);font-size:11px;margin-bottom:11px}
+    .history-actions{display:grid;grid-template-columns:1fr auto;gap:8px}.history-download{margin:0;padding:10px 12px;border-radius:11px;font-size:13px}.history-delete{width:auto;margin:0;padding:10px 12px;border:1px solid var(--border);background:#fff;color:var(--muted);border-radius:11px;font-size:13px}
+    .footer{text-align:center;color:#9a9a94;font-size:11px;margin-top:14px}
+    @media(max-width:430px){.row{grid-template-columns:1fr;gap:0}h1{font-size:32px}.result{grid-template-columns:82px 1fr}.thumb{width:82px}}
   </style>
 </head>
 <body>
 <main>
   <h1>YouTube → PDF</h1>
-  <p class="sub">Paste a video. Get a clean PDF from its captions.</p>
+  <p class="sub">Paste a video, or search a channel and pick one.</p>
 
   <div class="card">
-    <div class="group">
-      <label for="url">YouTube URL</label>
-      <input id="url" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…" />
+    <div class="tabs">
+      <button id="urlTab" class="tab active" type="button">Paste URL</button>
+      <button id="searchTab" class="tab" type="button">Search YouTube</button>
     </div>
 
-    <div class="row">
+    <section id="urlPane" class="pane active">
       <div class="group">
-        <label for="mode">Transcript style</label>
-        <select id="mode"><option value="clean" selected>Clean transcript</option><option value="exact">Exact transcript</option></select>
+        <label for="url">YouTube URL</label>
+        <input id="url" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…" />
       </div>
-      <div class="group">
-        <label for="lang">Language</label>
-        <input id="lang" value="en" placeholder="en" />
+      <button id="go" type="button">Make PDF</button>
+    </section>
+
+    <section id="searchPane" class="pane">
+      <div id="channelPicker">
+        <div class="group">
+          <label for="channelQuery">Find a YouTube channel</label>
+          <input id="channelQuery" autocomplete="off" placeholder="e.g. HistoryMarche" />
+        </div>
+        <button id="findChannel" type="button">Search channels</button>
+        <div id="channelResults" class="results"></div>
+      </div>
+
+      <div id="channelBrowser" style="display:none">
+        <div id="selectedChannel" class="selected-channel"></div>
+        <div class="group">
+          <label id="videoSearchLabel" for="videoQuery">Search this channel</label>
+          <input id="videoQuery" autocomplete="off" placeholder="Video title or topic" />
+          <div class="small">Leave blank to look for recent videos.</div>
+        </div>
+        <button id="findVideos" type="button">Search videos</button>
+        <div id="videoResults" class="results"></div>
+      </div>
+    </section>
+
+    <div class="settings">
+      <div class="row">
+        <div class="group">
+          <label for="mode">Transcript style</label>
+          <select id="mode"><option value="clean" selected>Clean transcript</option><option value="exact">Exact transcript</option></select>
+        </div>
+        <div class="group">
+          <label for="lang">Language</label>
+          <input id="lang" value="en" placeholder="en" />
+        </div>
       </div>
     </div>
 
-    <button id="go">Make PDF</button>
     <div id="status" class="status"></div>
-    <div id="preview" class="preview"></div>
 
     <details>
       <summary>API key settings</summary>
       <div class="group" style="margin-top:12px">
         <label for="key">Supadata API key</label>
         <input id="key" type="password" autocomplete="off" placeholder="Paste once; saved only on this device" />
-        <div class="small">The key is stored in your browser on this device. It is sent only to Supadata when you request a transcript.</div>
+        <div class="small">Saved only in this browser and sent to Supadata for search/transcript requests.</div>
       </div>
-      <button id="save" style="background:#ecece8;color:#111">Save key</button>
+      <button id="save" class="secondary" type="button">Save key</button>
     </details>
   </div>
 
   <section class="history">
-    <div class="history-head">
-      <h2>History</h2>
-      <button id="clearHistory" class="clear-btn" type="button">Clear all</button>
-    </div>
-    <div id="historyList" class="history-list">
-      <div class="history-empty">No PDFs yet.</div>
-    </div>
+    <div class="history-head"><h2>History</h2><button id="clearHistory" class="clear-btn" type="button">Clear all</button></div>
+    <div id="historyList" class="history-list"><div class="history-empty">No PDFs yet.</div></div>
   </section>
-
-  <div class="footer">History is stored on this device.</div>
+  <div class="footer">Your selected channel and PDF history are stored on this device.</div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script>
-const $ = id => document.getElementById(id);
-$("key").value = localStorage.getItem("supadata_key") || "";
-$("save").onclick = () => {
-  localStorage.setItem("supadata_key", $("key").value.trim());
-  $("status").textContent = "API key saved on this device.";
-};
+const $=id=>document.getElementById(id);
+let selectedChannel=null;
 
-function normalizeUrl(s) {
-  try {
-    const u = new URL(s.trim());
-    if (!/youtube\.com|youtu\.be/.test(u.hostname)) throw new Error();
-    return u.toString();
-  } catch { throw new Error("Paste a valid YouTube link."); }
+$("key").value=localStorage.getItem("supadata_key")||"";
+try{selectedChannel=JSON.parse(localStorage.getItem("ytpdf_channel")||"null")}catch{}
+
+function setStatus(s){$("status").textContent=s||""}
+function getKey(){const k=$("key").value.trim()||localStorage.getItem("supadata_key")||"";if(!k)throw new Error("Open API key settings and paste your Supadata API key first.");return k}
+$("save").onclick=()=>{localStorage.setItem("supadata_key",$("key").value.trim());setStatus("API key saved on this device.")};
+
+function switchTab(which){
+  const url=which==="url";
+  $("urlTab").classList.toggle("active",url);$("searchTab").classList.toggle("active",!url);
+  $("urlPane").classList.toggle("active",url);$("searchPane").classList.toggle("active",!url);
+  setStatus("");
+}
+$("urlTab").onclick=()=>switchTab("url");$("searchTab").onclick=()=>switchTab("search");
+
+function normalizeUrl(s){try{const u=new URL(s.trim());if(!/youtube\.com|youtu\.be/.test(u.hostname))throw new Error();return u.toString()}catch{throw new Error("Paste a valid YouTube link.")}}
+function getVideoId(url){try{const u=new URL(url);if(u.hostname.includes("youtu.be"))return u.pathname.split("/").filter(Boolean)[0]||"video";if(u.searchParams.get("v"))return u.searchParams.get("v");const p=u.pathname.split("/").filter(Boolean),i=p.findIndex(x=>["shorts","embed","live"].includes(x));if(i>=0&&p[i+1])return p[i+1]}catch{}return"video"}
+function cleanSegments(content,exact=false){const raw=Array.isArray(content)?content.map(x=>typeof x==="string"?x:(x.text||"")):[String(content||"")],lines=[];let prev="";for(let t of raw){t=t.replace(/\s+/g," ").trim();if(!t)continue;if(!exact&&/^\[(music|applause|laughter|silence|foreign)\]$/i.test(t))continue;if(t===prev)continue;prev=t;lines.push(t)}if(exact)return lines.join("\n");let text=lines.join(" ").replace(/\s+([,.;!?])/g,"$1").replace(/([.!?])\s+/g,"$1\n\n");if(text.split("\n\n").length<3&&text.length>700){const w=text.split(/\s+/),p=[];for(let i=0;i<w.length;i+=110)p.push(w.slice(i,i+110).join(" "));text=p.join("\n\n")}return text.trim()}
+async function apiJson(url,key){const r=await fetch(url,{headers:{"x-api-key":key}});let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.message||d.error||`API error ${r.status}`);return d}
+function safeFileName(s){return String(s||"Transcript").replace(/[\\/:*?\"<>|]+/g,"").replace(/\s+/g," ").trim().slice(0,100)||"Transcript"}
+function escapeHtml(s){return String(s??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[c]))}
+function fmtDate(s){if(!s)return"";try{return new Intl.DateTimeFormat(undefined,{dateStyle:"medium"}).format(new Date(s))}catch{return""}}
+function fmtDuration(sec){sec=Number(sec||0);if(!sec)return"";const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60);return h?`${h}h ${m}m`:`${m} min`}
+
+function makePdfBlob(title,channel,sourceUrl,transcript){
+  if(!window.jspdf)throw new Error("PDF library did not load. Check your internet connection.");
+  const{jsPDF}=window.jspdf,doc=new jsPDF({unit:"mm",format:"a4",compress:true}),pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight(),left=18,right=18,top=20,bottom=18,textW=pageW-left-right;let y=top;
+  doc.setProperties({title,subject:"YouTube transcript",author:channel||"",creator:"YouTube → PDF"});doc.setFont("helvetica","bold");doc.setFontSize(18);const tl=doc.splitTextToSize(title,textW);doc.text(tl,left,y);y+=tl.length*7+2;doc.setFont("helvetica","normal");doc.setTextColor(100);doc.setFontSize(9);if(channel){doc.text(channel,left,y);y+=5}const ul=doc.splitTextToSize(sourceUrl,textW);doc.text(ul,left,y);y+=ul.length*4+8;doc.setTextColor(20);doc.setFontSize(11);
+  for(const para of transcript.split(/\n{2,}/).map(x=>x.trim()).filter(Boolean)){for(const line of doc.splitTextToSize(para,textW)){if(y>pageH-bottom){doc.addPage();y=top}doc.text(line,left,y);y+=5.4}y+=3.2}
+  return doc.output("blob")
+}
+function downloadBlob(blob,filename){const href=URL.createObjectURL(blob),a=document.createElement("a");a.href=href;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),5000)}
+
+const DB_NAME="youtubePdfHistory",DB_VERSION=1,STORE="pdfs";
+function openDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(STORE)){const st=db.createObjectStore(STORE,{keyPath:"id"});st.createIndex("createdAt","createdAt")}};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+async function historyPut(item){const db=await openDb();await new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put(item);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close();await trimHistory()}
+async function historyAll(){const db=await openDb(),items=await new Promise((res,rej)=>{const q=db.transaction(STORE,"readonly").objectStore(STORE).getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>rej(q.error)});db.close();return items.sort((a,b)=>b.createdAt-a.createdAt)}
+async function historyDelete(id){const db=await openDb();await new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).delete(id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close()}
+async function historyClear(){const db=await openDb();await new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close()}
+async function trimHistory(max=30){const x=await historyAll();for(const item of x.slice(max))await historyDelete(item.id)}
+function formatCreated(ms){return new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short"}).format(new Date(ms))}
+async function renderHistory(){const list=$("historyList"),items=await historyAll();if(!items.length){list.innerHTML='<div class="history-empty">No PDFs yet.</div>';return}list.innerHTML=items.map(i=>`<div class="history-item"><div class="history-title">${escapeHtml(i.title)}</div><div class="history-meta">${escapeHtml(formatCreated(i.createdAt))}</div><div class="history-actions"><button class="history-download" data-download="${i.id}" type="button">Download again</button><button class="history-delete" data-delete="${i.id}" type="button">Delete</button></div></div>`).join("");list.querySelectorAll("[data-download]").forEach(b=>b.onclick=async()=>{const i=(await historyAll()).find(x=>x.id===b.dataset.download);if(i?.blob)downloadBlob(i.blob,i.filename)});list.querySelectorAll("[data-delete]").forEach(b=>b.onclick=async()=>{await historyDelete(b.dataset.delete);renderHistory()})}
+$("clearHistory").onclick=async()=>{if(confirm("Clear all saved PDFs from this device?")){await historyClear();renderHistory()}};
+
+async function generatePdf(videoUrl,override=null){
+  const key=getKey(),videoId=getVideoId(videoUrl),lang=$("lang").value.trim()||"en";setStatus("Getting captions…");
+  const transcriptUrl="https://api.supadata.ai/v1/transcript?url="+encodeURIComponent(videoUrl)+"&lang="+encodeURIComponent(lang);
+  let tr,meta=override||{};
+  if(override){tr=await apiJson(transcriptUrl,key)}else{[tr,meta]=await Promise.all([apiJson(transcriptUrl,key),apiJson("https://api.supadata.ai/v1/metadata?url="+encodeURIComponent(videoUrl),key).catch(()=>({}))])}
+  if(!tr.content)throw new Error("No transcript was returned for this video.");
+  const text=cleanSegments(tr.content,$("mode").value==="exact"),channel=(meta.channel&&(meta.channel.name||meta.channel.title))||meta.author||"",title=(meta.title&&String(meta.title).trim())||`YouTube Transcript — ${videoId}`,filename=`${safeFileName(title)} - ${videoId}.pdf`;
+  setStatus(`Building “${title}”…`);const blob=makePdfBlob(title,channel,videoUrl,text);downloadBlob(blob,filename);
+  await historyPut({id:`${videoId}-${Date.now()}`,title,filename,videoUrl,createdAt:Date.now(),blob});await renderHistory();setStatus("Done — PDF created and added to History.")
 }
 
-function getVideoId(url) {
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes("youtu.be")) return u.pathname.split("/").filter(Boolean)[0] || "video";
-    if (u.searchParams.get("v")) return u.searchParams.get("v");
-    const parts = u.pathname.split("/").filter(Boolean);
-    const i = parts.findIndex(x => ["shorts","embed","live"].includes(x));
-    if (i >= 0 && parts[i+1]) return parts[i+1];
-  } catch {}
-  return "video";
+$("go").onclick=async()=>{const b=$("go");try{b.disabled=true;await generatePdf(normalizeUrl($("url").value))}catch(e){setStatus(e.message||"Something went wrong.")}finally{b.disabled=false}};
+
+function showSelectedChannel(){
+  const picker=$("channelPicker"),browser=$("channelBrowser");
+  if(!selectedChannel){picker.style.display="block";browser.style.display="none";return}
+  picker.style.display="none";browser.style.display="block";
+  $("selectedChannel").innerHTML=`${selectedChannel.thumbnail?`<img class="avatar" src="${escapeHtml(selectedChannel.thumbnail)}" alt="">`:""}<div class="info"><div class="small">Selected channel</div><div class="name">${escapeHtml(selectedChannel.name)}</div></div><button id="changeChannel" class="change" type="button">Change</button>`;
+  $("videoSearchLabel").textContent=`Search ${selectedChannel.name}`;
+  $("changeChannel").onclick=()=>{selectedChannel=null;localStorage.removeItem("ytpdf_channel");$("channelResults").innerHTML="";$("videoResults").innerHTML="";showSelectedChannel()}
 }
 
-function cleanSegments(content, exact=false) {
-  const raw = Array.isArray(content) ? content.map(x => typeof x === "string" ? x : (x.text || "")) : [String(content || "")];
-  const lines = [];
-  let prev = "";
-  for (let t of raw) {
-    t = t.replace(/\s+/g," ").trim();
-    if (!t) continue;
-    if (!exact && /^\[(music|applause|laughter|silence|foreign)\]$/i.test(t)) continue;
-    if (t === prev) continue;
-    prev = t;
-    lines.push(t);
-  }
-  if (exact) return lines.join("\n");
-  let text = lines.join(" ").replace(/\s+([,.;!?])/g,"$1").replace(/([.!?])\s+/g,"$1\n\n");
-  if (text.split("\n\n").length < 3 && text.length > 700) {
-    const words = text.split(/\s+/), paras = [];
-    for (let i=0;i<words.length;i+=110) paras.push(words.slice(i,i+110).join(" "));
-    text = paras.join("\n\n");
-  }
-  return text.trim();
-}
+$("findChannel").onclick=async()=>{const b=$("findChannel"),q=$("channelQuery").value.trim();if(!q){setStatus("Type a channel name first.");return}try{b.disabled=true;setStatus("Searching channels…");const d=await apiJson(`https://api.supadata.ai/v1/youtube/search?query=${encodeURIComponent(q)}&type=channel`,getKey()),results=(d.results||[]).filter(x=>x.type==="channel");if(!results.length){$("channelResults").innerHTML='<div class="history-empty">No channels found.</div>';setStatus("");return}$("channelResults").innerHTML=results.map((r,i)=>`<div class="result channel" data-ci="${i}">${r.thumbnail?`<img class="avatar" src="${escapeHtml(r.thumbnail)}" alt="">`:"<div></div>"}<div><div class="rtitle">${escapeHtml(r.title)}</div><div class="rmeta">${r.subscriberCount?Number(r.subscriberCount).toLocaleString()+" subscribers":"YouTube channel"}</div></div><button class="pick" type="button">Select</button></div>`).join("");$("channelResults").querySelectorAll("[data-ci]").forEach(el=>el.onclick=()=>{const r=results[Number(el.dataset.ci)];selectedChannel={id:r.id,name:r.title,thumbnail:r.thumbnail||""};localStorage.setItem("ytpdf_channel",JSON.stringify(selectedChannel));showSelectedChannel();setStatus(`Selected ${selectedChannel.name}.`) });setStatus("")}catch(e){setStatus(e.message||"Search failed.")}finally{b.disabled=false}};
 
-async function apiJson(url,key) {
-  const r = await fetch(url,{headers:{"x-api-key":key}});
-  let data = {};
-  try { data = await r.json(); } catch {}
-  if (!r.ok) throw new Error(data.message || data.error || `API error ${r.status}`);
-  return data;
-}
+$("findVideos").onclick=async()=>{const b=$("findVideos");if(!selectedChannel)return;try{b.disabled=true;setStatus(`Searching ${selectedChannel.name}…`);const term=$("videoQuery").value.trim(),q=[selectedChannel.name,term].filter(Boolean).join(" "),sort=term?"relevance":"date",d=await apiJson(`https://api.supadata.ai/v1/youtube/search?query=${encodeURIComponent(q)}&type=video&sortBy=${sort}`,getKey()),all=(d.results||[]).filter(x=>x.type==="video"),results=all.filter(x=>x.channel?.id===selectedChannel.id||String(x.channel?.name||"").toLowerCase()===selectedChannel.name.toLowerCase());if(!results.length){$("videoResults").innerHTML='<div class="history-empty">No matching videos from this channel in the first search page. Try a more specific title or topic.</div>';setStatus("");return}$("videoResults").innerHTML=results.map((r,i)=>`<div class="result">${r.thumbnail?`<img class="thumb" src="${escapeHtml(r.thumbnail)}" alt="">`:"<div></div>"}<div><div class="rtitle">${escapeHtml(r.title)}</div><div class="rmeta">${[fmtDate(r.uploadDate),fmtDuration(r.duration)].filter(Boolean).join(" · ")}</div><button class="video-btn" data-vi="${i}" type="button">Make PDF</button></div></div>`).join("");$("videoResults").querySelectorAll("[data-vi]").forEach(btn=>btn.onclick=async ev=>{ev.stopPropagation();const r=results[Number(btn.dataset.vi)],url=`https://www.youtube.com/watch?v=${encodeURIComponent(r.id)}`;try{btn.disabled=true;await generatePdf(url,{title:r.title,channel:r.channel||selectedChannel})}catch(e){setStatus(e.message||"Could not create PDF.")}finally{btn.disabled=false}});setStatus(`${results.length} video${results.length===1?"":"s"} found.`)}catch(e){setStatus(e.message||"Search failed.")}finally{b.disabled=false}};
 
-function safeFileName(s) {
-  return String(s || "Transcript").replace(/[\\/:*?\"<>|]+/g,"").replace(/\s+/g," ").trim().slice(0,100) || "Transcript";
-}
-
-function makePdfBlob(title,channel,sourceUrl,transcript) {
-  if (!window.jspdf) throw new Error("PDF library did not load. Check your internet connection.");
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({unit:"mm",format:"a4",compress:true});
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const left = 18, right = 18, top = 20, bottom = 18;
-  const textW = pageW - left - right;
-  let y = top;
-
-  doc.setProperties({ title, subject:"YouTube transcript", author:channel || "", creator:"YouTube → PDF" });
-  doc.setFont("helvetica","bold");
-  doc.setFontSize(18);
-  const titleLines = doc.splitTextToSize(title,textW);
-  doc.text(titleLines,left,y);
-  y += titleLines.length * 7 + 2;
-
-  doc.setFont("helvetica","normal");
-  doc.setTextColor(100);
-  doc.setFontSize(9);
-  if (channel) { doc.text(channel,left,y); y += 5; }
-  const urlLines = doc.splitTextToSize(sourceUrl,textW);
-  doc.text(urlLines,left,y);
-  y += urlLines.length * 4 + 8;
-
-  doc.setTextColor(20);
-  doc.setFontSize(11);
-  const paragraphs = transcript.split(/\n{2,}/).map(x=>x.trim()).filter(Boolean);
-  for (const para of paragraphs) {
-    const lines = doc.splitTextToSize(para,textW);
-    for (const line of lines) {
-      if (y > pageH - bottom) { doc.addPage(); y = top; }
-      doc.text(line,left,y);
-      y += 5.4;
-    }
-    y += 3.2;
-  }
-  return doc.output("blob");
-}
-
-function downloadBlob(blob, filename) {
-  const href = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = href;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(href), 5000);
-}
-
-const DB_NAME = "youtubePdfHistory";
-const DB_VERSION = 1;
-const STORE = "pdfs";
-
-function openDb() {
-  return new Promise((resolve,reject) => {
-    const req = indexedDB.open(DB_NAME,DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE)) {
-        const store = db.createObjectStore(STORE,{keyPath:"id"});
-        store.createIndex("createdAt","createdAt");
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function historyPut(item) {
-  const db = await openDb();
-  await new Promise((resolve,reject) => {
-    const tx = db.transaction(STORE,"readwrite");
-    tx.objectStore(STORE).put(item);
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-  db.close();
-  await trimHistory();
-}
-
-async function historyAll() {
-  const db = await openDb();
-  const items = await new Promise((resolve,reject) => {
-    const req = db.transaction(STORE,"readonly").objectStore(STORE).getAll();
-    req.onsuccess = () => resolve(req.result || []);
-    req.onerror = () => reject(req.error);
-  });
-  db.close();
-  return items.sort((a,b) => b.createdAt - a.createdAt);
-}
-
-async function historyDelete(id) {
-  const db = await openDb();
-  await new Promise((resolve,reject) => {
-    const tx = db.transaction(STORE,"readwrite");
-    tx.objectStore(STORE).delete(id);
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-  db.close();
-}
-
-async function historyClear() {
-  const db = await openDb();
-  await new Promise((resolve,reject) => {
-    const tx = db.transaction(STORE,"readwrite");
-    tx.objectStore(STORE).clear();
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-  db.close();
-}
-
-async function trimHistory(max=30) {
-  const items = await historyAll();
-  if (items.length <= max) return;
-  for (const item of items.slice(max)) await historyDelete(item.id);
-}
-
-function formatDate(ms) {
-  return new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short"}).format(new Date(ms));
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>\"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[c]));
-}
-
-async function renderHistory() {
-  const list = $("historyList");
-  try {
-    const items = await historyAll();
-    if (!items.length) {
-      list.innerHTML = '<div class="history-empty">No PDFs yet.</div>';
-      return;
-    }
-    list.innerHTML = items.map(item => `
-      <div class="history-item" data-id="${item.id}">
-        <div class="history-title">${escapeHtml(item.title)}</div>
-        <div class="history-meta">${escapeHtml(formatDate(item.createdAt))}</div>
-        <div class="history-actions">
-          <button class="history-download" type="button" data-download="${item.id}">Download again</button>
-          <button class="history-delete" type="button" data-delete="${item.id}" aria-label="Delete from history">Delete</button>
-        </div>
-      </div>`).join("");
-
-    list.querySelectorAll("[data-download]").forEach(btn => {
-      btn.onclick = async () => {
-        const id = btn.dataset.download;
-        const item = (await historyAll()).find(x => x.id === id);
-        if (item && item.blob) downloadBlob(item.blob,item.filename);
-      };
-    });
-
-    list.querySelectorAll("[data-delete]").forEach(btn => {
-      btn.onclick = async () => {
-        await historyDelete(btn.dataset.delete);
-        await renderHistory();
-      };
-    });
-  } catch {
-    list.innerHTML = '<div class="history-empty">History is unavailable in this browser.</div>';
-  }
-}
-
-$("clearHistory").onclick = async () => {
-  await historyClear();
-  await renderHistory();
-};
-
-$("go").onclick = async () => {
-  const btn=$("go"), status=$("status"), preview=$("preview");
-  preview.style.display="none";
-  try {
-    const videoUrl = normalizeUrl($("url").value);
-    const videoId = getVideoId(videoUrl);
-    const key = $("key").value.trim() || localStorage.getItem("supadata_key") || "";
-    if (!key) throw new Error("Open API key settings and paste your Supadata API key first.");
-    localStorage.setItem("supadata_key",key);
-
-    btn.disabled=true;
-    status.textContent="Getting captions…";
-    const lang=$("lang").value.trim() || "en";
-    const transcriptUrl="https://api.supadata.ai/v1/transcript?url="+encodeURIComponent(videoUrl)+"&lang="+encodeURIComponent(lang);
-    const metadataUrl="https://api.supadata.ai/v1/metadata?url="+encodeURIComponent(videoUrl);
-    const [tr,meta] = await Promise.all([
-      apiJson(transcriptUrl,key),
-      apiJson(metadataUrl,key).catch(()=>({}))
-    ]);
-    if (!tr.content) throw new Error("No transcript was returned for this video.");
-
-    status.textContent="Cleaning transcript…";
-    const text=cleanSegments(tr.content,$("mode").value==="exact");
-    preview.textContent=text.slice(0,4000)+(text.length>4000?"\n\n…":"");
-    preview.style.display="block";
-
-    const channel=(meta.channel && (meta.channel.name || meta.channel.title)) || meta.author || "";
-    const title=(meta.title && String(meta.title).trim()) || `YouTube Transcript — ${videoId}`;
-    const filename=`${safeFileName(title)} - ${videoId}.pdf`;
-
-    status.textContent=`Building “${title}”…`;
-    const blob=makePdfBlob(title,channel,videoUrl,text);
-
-    const id=(crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
-    try {
-      await historyPut({ id,title,filename,url:videoUrl,videoId,channel,createdAt:Date.now(),blob });
-      await renderHistory();
-    } catch {}
-
-    downloadBlob(blob,filename);
-    status.textContent="Done — your PDF has been created and added to History.";
-  } catch(e) {
-    status.textContent=e.message || "Something went wrong.";
-  } finally {
-    btn.disabled=false;
-  }
-};
-
-renderHistory();
+showSelectedChannel();renderHistory();
 </script>
 </body>
 </html>
