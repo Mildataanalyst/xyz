@@ -1,0 +1,14 @@
+{
+  "name": "YouTube to PDF",
+  "short_name": "YT PDF",
+  "description": "Search YouTube or paste a video URL and turn captions into a clean PDF.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f7f5",
+  "theme_color": "#111111",
+  "orientation": "portrait-primary",
+  "icons": [
+    {"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
