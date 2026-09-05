@@ -8,8 +8,8 @@
   <style>
     :root { --bg:#f7f7f5; --card:#fff; --text:#111; --muted:#707070; --border:#deded9; --accent:#111; }
     * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; display:flex; align-items:center; justify-content:center; padding:24px 16px 48px; }
-    main { width:min(560px,100%); }
+    body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; padding:24px 16px 48px; }
+    main { width:min(560px,100%); margin:0 auto; }
     h1 { font-size:34px; line-height:1.05; letter-spacing:-1.4px; margin:0 0 8px; }
     .sub { color:var(--muted); font-size:15px; line-height:1.5; margin:0 0 24px; }
     .card { background:var(--card); border:1px solid var(--border); border-radius:22px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,.04); }
@@ -26,17 +26,37 @@
     .small { font-size:12px; color:var(--muted); line-height:1.45; margin-top:8px; }
     .preview { margin-top:14px; white-space:pre-wrap; max-height:220px; overflow:auto; border-top:1px solid var(--border); padding-top:14px; font-size:14px; line-height:1.55; display:none; }
     .footer { text-align:center; color:#9a9a94; font-size:11px; margin-top:14px; }
+
+    .history { margin-top:26px; }
+    .history-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+    .history-head h2 { margin:0; font-size:19px; letter-spacing:-.35px; }
+    .clear-btn { width:auto; margin:0; padding:7px 10px; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--muted); font-size:12px; font-weight:650; }
+    .history-list { display:flex; flex-direction:column; gap:9px; }
+    .history-empty { color:var(--muted); font-size:13px; padding:17px 2px; }
+    .history-item { background:#fff; border:1px solid var(--border); border-radius:16px; padding:14px; }
+    .history-title { font-size:14px; line-height:1.35; font-weight:700; margin:0 0 5px; overflow-wrap:anywhere; }
+    .history-meta { color:var(--muted); font-size:11px; margin-bottom:11px; }
+    .history-actions { display:grid; grid-template-columns:1fr auto; gap:8px; }
+    .history-download { margin:0; padding:10px 12px; border-radius:11px; font-size:13px; }
+    .history-delete { width:auto; margin:0; padding:10px 12px; border:1px solid var(--border); background:#fff; color:var(--muted); border-radius:11px; font-size:13px; }
+
+    @media (max-width:420px) {
+      .row { grid-template-columns:1fr; gap:0; }
+      h1 { font-size:32px; }
+    }
   </style>
 </head>
 <body>
 <main>
   <h1>YouTube → PDF</h1>
   <p class="sub">Paste a video. Get a clean PDF from its captions.</p>
+
   <div class="card">
     <div class="group">
       <label for="url">YouTube URL</label>
       <input id="url" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…" />
     </div>
+
     <div class="row">
       <div class="group">
         <label for="mode">Transcript style</label>
@@ -47,9 +67,11 @@
         <input id="lang" value="en" placeholder="en" />
       </div>
     </div>
+
     <button id="go">Make PDF</button>
     <div id="status" class="status"></div>
     <div id="preview" class="preview"></div>
+
     <details>
       <summary>API key settings</summary>
       <div class="group" style="margin-top:12px">
@@ -60,7 +82,18 @@
       <button id="save" style="background:#ecece8;color:#111">Save key</button>
     </details>
   </div>
-  <div class="footer">For videos and transcripts you have permission to use.</div>
+
+  <section class="history">
+    <div class="history-head">
+      <h2>History</h2>
+      <button id="clearHistory" class="clear-btn" type="button">Clear all</button>
+    </div>
+    <div id="historyList" class="history-list">
+      <div class="history-empty">No PDFs yet.</div>
+    </div>
+  </section>
+
+  <div class="footer">History is stored on this device.</div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -126,7 +159,7 @@ function safeFileName(s) {
   return String(s || "Transcript").replace(/[\\/:*?\"<>|]+/g,"").replace(/\s+/g," ").trim().slice(0,100) || "Transcript";
 }
 
-function makePdf(title,channel,sourceUrl,transcript,videoId) {
+function makePdfBlob(title,channel,sourceUrl,transcript) {
   if (!window.jspdf) throw new Error("PDF library did not load. Check your internet connection.");
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({unit:"mm",format:"a4",compress:true});
@@ -136,13 +169,7 @@ function makePdf(title,channel,sourceUrl,transcript,videoId) {
   const textW = pageW - left - right;
   let y = top;
 
-  doc.setProperties({
-    title: title,
-    subject: "YouTube transcript",
-    author: channel || "",
-    creator: "YouTube → PDF"
-  });
-
+  doc.setProperties({ title, subject:"YouTube transcript", author:channel || "", creator:"YouTube → PDF" });
   doc.setFont("helvetica","bold");
   doc.setFontSize(18);
   const titleLines = doc.splitTextToSize(title,textW);
@@ -160,23 +187,148 @@ function makePdf(title,channel,sourceUrl,transcript,videoId) {
   doc.setTextColor(20);
   doc.setFontSize(11);
   const paragraphs = transcript.split(/\n{2,}/).map(x=>x.trim()).filter(Boolean);
-
   for (const para of paragraphs) {
     const lines = doc.splitTextToSize(para,textW);
     for (const line of lines) {
-      if (y > pageH - bottom) {
-        doc.addPage();
-        y = top;
-      }
+      if (y > pageH - bottom) { doc.addPage(); y = top; }
       doc.text(line,left,y);
       y += 5.4;
     }
     y += 3.2;
   }
-
-  const filename = `${safeFileName(title)} - ${videoId}.pdf`;
-  doc.save(filename);
+  return doc.output("blob");
 }
+
+function downloadBlob(blob, filename) {
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 5000);
+}
+
+const DB_NAME = "youtubePdfHistory";
+const DB_VERSION = 1;
+const STORE = "pdfs";
+
+function openDb() {
+  return new Promise((resolve,reject) => {
+    const req = indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        const store = db.createObjectStore(STORE,{keyPath:"id"});
+        store.createIndex("createdAt","createdAt");
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function historyPut(item) {
+  const db = await openDb();
+  await new Promise((resolve,reject) => {
+    const tx = db.transaction(STORE,"readwrite");
+    tx.objectStore(STORE).put(item);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+  await trimHistory();
+}
+
+async function historyAll() {
+  const db = await openDb();
+  const items = await new Promise((resolve,reject) => {
+    const req = db.transaction(STORE,"readonly").objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+  db.close();
+  return items.sort((a,b) => b.createdAt - a.createdAt);
+}
+
+async function historyDelete(id) {
+  const db = await openDb();
+  await new Promise((resolve,reject) => {
+    const tx = db.transaction(STORE,"readwrite");
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+}
+
+async function historyClear() {
+  const db = await openDb();
+  await new Promise((resolve,reject) => {
+    const tx = db.transaction(STORE,"readwrite");
+    tx.objectStore(STORE).clear();
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+}
+
+async function trimHistory(max=30) {
+  const items = await historyAll();
+  if (items.length <= max) return;
+  for (const item of items.slice(max)) await historyDelete(item.id);
+}
+
+function formatDate(ms) {
+  return new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short"}).format(new Date(ms));
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>\"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[c]));
+}
+
+async function renderHistory() {
+  const list = $("historyList");
+  try {
+    const items = await historyAll();
+    if (!items.length) {
+      list.innerHTML = '<div class="history-empty">No PDFs yet.</div>';
+      return;
+    }
+    list.innerHTML = items.map(item => `
+      <div class="history-item" data-id="${item.id}">
+        <div class="history-title">${escapeHtml(item.title)}</div>
+        <div class="history-meta">${escapeHtml(formatDate(item.createdAt))}</div>
+        <div class="history-actions">
+          <button class="history-download" type="button" data-download="${item.id}">Download again</button>
+          <button class="history-delete" type="button" data-delete="${item.id}" aria-label="Delete from history">Delete</button>
+        </div>
+      </div>`).join("");
+
+    list.querySelectorAll("[data-download]").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.dataset.download;
+        const item = (await historyAll()).find(x => x.id === id);
+        if (item && item.blob) downloadBlob(item.blob,item.filename);
+      };
+    });
+
+    list.querySelectorAll("[data-delete]").forEach(btn => {
+      btn.onclick = async () => {
+        await historyDelete(btn.dataset.delete);
+        await renderHistory();
+      };
+    });
+  } catch {
+    list.innerHTML = '<div class="history-empty">History is unavailable in this browser.</div>';
+  }
+}
+
+$("clearHistory").onclick = async () => {
+  await historyClear();
+  await renderHistory();
+};
 
 $("go").onclick = async () => {
   const btn=$("go"), status=$("status"), preview=$("preview");
@@ -206,16 +358,27 @@ $("go").onclick = async () => {
 
     const channel=(meta.channel && (meta.channel.name || meta.channel.title)) || meta.author || "";
     const title=(meta.title && String(meta.title).trim()) || `YouTube Transcript — ${videoId}`;
+    const filename=`${safeFileName(title)} - ${videoId}.pdf`;
 
     status.textContent=`Building “${title}”…`;
-    makePdf(title,channel,videoUrl,text,videoId);
-    status.textContent="Done — your PDF has been created.";
+    const blob=makePdfBlob(title,channel,videoUrl,text);
+
+    const id=(crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
+    try {
+      await historyPut({ id,title,filename,url:videoUrl,videoId,channel,createdAt:Date.now(),blob });
+      await renderHistory();
+    } catch {}
+
+    downloadBlob(blob,filename);
+    status.textContent="Done — your PDF has been created and added to History.";
   } catch(e) {
     status.textContent=e.message || "Something went wrong.";
   } finally {
     btn.disabled=false;
   }
 };
+
+renderHistory();
 </script>
 </body>
 </html>
