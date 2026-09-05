@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <title>YouTube → Doc</title>
+  <style>
+    :root { --bg:#f7f7f5; --card:#fff; --text:#111; --muted:#707070; --border:#deded9; --accent:#111; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display:flex; align-items:center; justify-content:center; padding:24px 16px 48px; }
+    main { width:min(560px,100%); }
+    h1 { font-size:34px; line-height:1.05; letter-spacing:-1.4px; margin:0 0 8px; }
+    .sub { color:var(--muted); font-size:15px; line-height:1.5; margin:0 0 24px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:22px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,.04); }
+    label { display:block; font-size:13px; font-weight:650; margin:0 0 8px; }
+    input, select { width:100%; border:1px solid var(--border); background:#fff; color:#111; border-radius:14px; font:inherit; padding:14px 15px; outline:none; }
+    input:focus,select:focus { border-color:#999; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .group { margin-bottom:14px; }
+    button { width:100%; border:0; border-radius:14px; padding:15px 18px; background:var(--accent); color:#fff; font:inherit; font-weight:700; cursor:pointer; margin-top:4px; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .status { min-height:22px; font-size:13px; color:var(--muted); margin-top:12px; }
+    details { margin-top:15px; border-top:1px solid var(--border); padding-top:15px; }
+    summary { cursor:pointer; color:var(--muted); font-size:13px; }
+    .small { font-size:12px; color:var(--muted); line-height:1.45; margin-top:8px; }
+    .preview { margin-top:14px; white-space:pre-wrap; max-height:220px; overflow:auto; border-top:1px solid var(--border); padding-top:14px; font-size:14px; line-height:1.55; display:none; }
+    .footer { text-align:center; color:#9a9a94; font-size:11px; margin-top:14px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>YouTube → Doc</h1>
+  <p class="sub">Paste a video. Get a clean Word document from its captions.</p>
+  <div class="card">
+    <div class="group">
+      <label for="url">YouTube URL</label>
+      <input id="url" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…" />
+    </div>
+    <div class="row">
+      <div class="group">
+        <label for="mode">Document style</label>
+        <select id="mode"><option value="clean" selected>Clean transcript</option><option value="exact">Exact transcript</option></select>
+      </div>
+      <div class="group">
+        <label for="lang">Language</label>
+        <input id="lang" value="en" placeholder="en" />
+      </div>
+    </div>
+    <button id="go">Make Word document</button>
+    <div id="status" class="status"></div>
+    <div id="preview" class="preview"></div>
+    <details>
+      <summary>API key settings</summary>
+      <div class="group" style="margin-top:12px">
+        <label for="key">Supadata API key</label>
+        <input id="key" type="password" autocomplete="off" placeholder="Paste once; saved only on this device" />
+        <div class="small">The key is stored in your browser on this device. It is sent only to Supadata when you request a transcript.</div>
+      </div>
+      <button id="save" style="background:#ecece8;color:#111">Save key</button>
+    </details>
+  </div>
+  <div class="footer">For videos and transcripts you have permission to use.</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+$("key").value = localStorage.getItem("supadata_key") || "";
+$("save").onclick = () => { localStorage.setItem("supadata_key", $("key").value.trim()); $("status").textContent = "API key saved on this device."; };
+function normalizeUrl(s) { try { const u = new URL(s.trim()); if (!/youtube\.com|youtu\.be/.test(u.hostname)) throw new Error(); return u.toString(); } catch { throw new Error("Paste a valid YouTube link."); } }
+function cleanSegments(content, exact=false) { const raw = Array.isArray(content) ? content.map(x => typeof x === "string" ? x : (x.text || "")) : [String(content || "")]; const lines = []; let prev = ""; for (let t of raw) { t = t.replace(/\s+/g, " ").trim(); if (!t) continue; if (!exact && /^\[(music|applause|laughter|silence|foreign)\]$/i.test(t)) continue; if (t === prev) continue; prev = t; lines.push(t); } if (exact) return lines.join("\n"); let text = lines.join(" ").replace(/\s+([,.;!?])/g, "$1").replace(/([.!?])\s+/g, "$1\n\n"); if (text.split("\n\n").length < 3 && text.length > 700) { const words = text.split(/\s+/); const paras = []; for (let i=0; i<words.length; i+=110) paras.push(words.slice(i,i+110).join(" ")); text = paras.join("\n\n"); } return text.trim(); }
+function xmlEscape(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&apos;"); }
+async function makeDocx(title, channel, sourceUrl, transcript) { if (!window.JSZip) throw new Error("Document library did not load. Check your internet connection."); const zip = new JSZip(); const paragraphs = transcript.split(/\n{2,}/).map(p => p.trim()).filter(Boolean); zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`); zip.folder("_rels").file(".rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`); zip.folder("word").file("styles.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:sz w:val="22"/></w:rPr></w:style></w:styles>`); const meta = [channel, sourceUrl].filter(Boolean).join(" • "); const body = [`<w:p><w:r><w:rPr><w:b/><w:sz w:val="34"/></w:rPr><w:t>${xmlEscape(title || "YouTube Transcript")}</w:t></w:r></w:p>`, `<w:p><w:r><w:rPr><w:color w:val="777777"/><w:sz w:val="18"/></w:rPr><w:t>${xmlEscape(meta)}</w:t></w:r></w:p>`, ...paragraphs.map(p => `<w:p><w:pPr><w:spacing w:after="180"/></w:pPr><w:r><w:t xml:space="preserve">${xmlEscape(p)}</w:t></w:r></w:p>`)].join(""); zip.folder("word").file("document.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr/></w:body></w:document>`); return await zip.generateAsync({type:"blob", mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}); }
+async function apiJson(url, key) { const r = await fetch(url, {headers: {"x-api-key": key}}); let data = {}; try { data = await r.json(); } catch {} if (!r.ok) { const msg = data.message || data.error || `API error ${r.status}`; throw new Error(msg); } return data; }
+$("go").onclick = async () => { const btn = $("go"), status = $("status"), preview = $("preview"); preview.style.display = "none"; try { const videoUrl = normalizeUrl($("url").value); const key = ($("key").value.trim() || localStorage.getItem("supadata_key") || ""); if (!key) throw new Error("Open API key settings and paste your Supadata API key first."); localStorage.setItem("supadata_key", key); btn.disabled = true; status.textContent = "Getting captions…"; const lang = $("lang").value.trim() || "en"; const transcriptUrl = "https://api.supadata.ai/v1/transcript?url=" + encodeURIComponent(videoUrl) + "&lang=" + encodeURIComponent(lang); const metadataUrl = "https://api.supadata.ai/v1/metadata?url=" + encodeURIComponent(videoUrl); const [tr, meta] = await Promise.all([apiJson(transcriptUrl, key), apiJson(metadataUrl, key).catch(() => ({}))]); if (!tr.content) throw new Error("No transcript was returned for this video."); status.textContent = "Cleaning transcript…"; const text = cleanSegments(tr.content, $("mode").value === "exact"); preview.textContent = text.slice(0, 4000) + (text.length > 4000 ? "\n\n…" : ""); preview.style.display = "block"; status.textContent = "Building Word document…"; const title = meta.title || "YouTube Transcript"; const channel = (meta.channel && (meta.channel.name || meta.channel.title)) || meta.author || ""; const blob = await makeDocx(title, channel, videoUrl, text); const safe = title.replace(/[\\/:*?\"<>|]+/g,"").replace(/\s+/g," ").trim().slice(0,90) || "YouTube Transcript"; const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = safe + ".docx"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); status.textContent = "Done — your Word document has been created."; } catch (e) { status.textContent = e.message || "Something went wrong."; } finally { btn.disabled = false; } };
+</script>
+</body>
+</html>
