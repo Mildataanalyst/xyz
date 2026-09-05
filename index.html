@@ -4,17 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#111111" />
-  <title>YouTube → Doc</title>
+  <title>YouTube → PDF</title>
   <style>
     :root { --bg:#f7f7f5; --card:#fff; --text:#111; --muted:#707070; --border:#deded9; --accent:#111; }
     * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display:flex; align-items:center; justify-content:center; padding:24px 16px 48px; }
+    body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; display:flex; align-items:center; justify-content:center; padding:24px 16px 48px; }
     main { width:min(560px,100%); }
     h1 { font-size:34px; line-height:1.05; letter-spacing:-1.4px; margin:0 0 8px; }
     .sub { color:var(--muted); font-size:15px; line-height:1.5; margin:0 0 24px; }
     .card { background:var(--card); border:1px solid var(--border); border-radius:22px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,.04); }
     label { display:block; font-size:13px; font-weight:650; margin:0 0 8px; }
-    input, select { width:100%; border:1px solid var(--border); background:#fff; color:#111; border-radius:14px; font:inherit; padding:14px 15px; outline:none; }
+    input,select { width:100%; border:1px solid var(--border); background:#fff; color:#111; border-radius:14px; font:inherit; padding:14px 15px; outline:none; }
     input:focus,select:focus { border-color:#999; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .group { margin-bottom:14px; }
@@ -30,8 +30,8 @@
 </head>
 <body>
 <main>
-  <h1>YouTube → Doc</h1>
-  <p class="sub">Paste a video. Get a clean Word document from its captions.</p>
+  <h1>YouTube → PDF</h1>
+  <p class="sub">Paste a video. Get a clean PDF from its captions.</p>
   <div class="card">
     <div class="group">
       <label for="url">YouTube URL</label>
@@ -39,7 +39,7 @@
     </div>
     <div class="row">
       <div class="group">
-        <label for="mode">Document style</label>
+        <label for="mode">Transcript style</label>
         <select id="mode"><option value="clean" selected>Clean transcript</option><option value="exact">Exact transcript</option></select>
       </div>
       <div class="group">
@@ -47,7 +47,7 @@
         <input id="lang" value="en" placeholder="en" />
       </div>
     </div>
-    <button id="go">Make Word document</button>
+    <button id="go">Make PDF</button>
     <div id="status" class="status"></div>
     <div id="preview" class="preview"></div>
     <details>
@@ -62,17 +62,160 @@
   </div>
   <div class="footer">For videos and transcripts you have permission to use.</div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 $("key").value = localStorage.getItem("supadata_key") || "";
-$("save").onclick = () => { localStorage.setItem("supadata_key", $("key").value.trim()); $("status").textContent = "API key saved on this device."; };
-function normalizeUrl(s) { try { const u = new URL(s.trim()); if (!/youtube\.com|youtu\.be/.test(u.hostname)) throw new Error(); return u.toString(); } catch { throw new Error("Paste a valid YouTube link."); } }
-function cleanSegments(content, exact=false) { const raw = Array.isArray(content) ? content.map(x => typeof x === "string" ? x : (x.text || "")) : [String(content || "")]; const lines = []; let prev = ""; for (let t of raw) { t = t.replace(/\s+/g, " ").trim(); if (!t) continue; if (!exact && /^\[(music|applause|laughter|silence|foreign)\]$/i.test(t)) continue; if (t === prev) continue; prev = t; lines.push(t); } if (exact) return lines.join("\n"); let text = lines.join(" ").replace(/\s+([,.;!?])/g, "$1").replace(/([.!?])\s+/g, "$1\n\n"); if (text.split("\n\n").length < 3 && text.length > 700) { const words = text.split(/\s+/); const paras = []; for (let i=0; i<words.length; i+=110) paras.push(words.slice(i,i+110).join(" ")); text = paras.join("\n\n"); } return text.trim(); }
-function xmlEscape(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&apos;"); }
-async function makeDocx(title, channel, sourceUrl, transcript) { if (!window.JSZip) throw new Error("Document library did not load. Check your internet connection."); const zip = new JSZip(); const paragraphs = transcript.split(/\n{2,}/).map(p => p.trim()).filter(Boolean); zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`); zip.folder("_rels").file(".rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`); zip.folder("word").file("styles.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:sz w:val="22"/></w:rPr></w:style></w:styles>`); const meta = [channel, sourceUrl].filter(Boolean).join(" • "); const body = [`<w:p><w:r><w:rPr><w:b/><w:sz w:val="34"/></w:rPr><w:t>${xmlEscape(title || "YouTube Transcript")}</w:t></w:r></w:p>`, `<w:p><w:r><w:rPr><w:color w:val="777777"/><w:sz w:val="18"/></w:rPr><w:t>${xmlEscape(meta)}</w:t></w:r></w:p>`, ...paragraphs.map(p => `<w:p><w:pPr><w:spacing w:after="180"/></w:pPr><w:r><w:t xml:space="preserve">${xmlEscape(p)}</w:t></w:r></w:p>`)].join(""); zip.folder("word").file("document.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr/></w:body></w:document>`); return await zip.generateAsync({type:"blob", mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}); }
-async function apiJson(url, key) { const r = await fetch(url, {headers: {"x-api-key": key}}); let data = {}; try { data = await r.json(); } catch {} if (!r.ok) { const msg = data.message || data.error || `API error ${r.status}`; throw new Error(msg); } return data; }
-$("go").onclick = async () => { const btn = $("go"), status = $("status"), preview = $("preview"); preview.style.display = "none"; try { const videoUrl = normalizeUrl($("url").value); const key = ($("key").value.trim() || localStorage.getItem("supadata_key") || ""); if (!key) throw new Error("Open API key settings and paste your Supadata API key first."); localStorage.setItem("supadata_key", key); btn.disabled = true; status.textContent = "Getting captions…"; const lang = $("lang").value.trim() || "en"; const transcriptUrl = "https://api.supadata.ai/v1/transcript?url=" + encodeURIComponent(videoUrl) + "&lang=" + encodeURIComponent(lang); const metadataUrl = "https://api.supadata.ai/v1/metadata?url=" + encodeURIComponent(videoUrl); const [tr, meta] = await Promise.all([apiJson(transcriptUrl, key), apiJson(metadataUrl, key).catch(() => ({}))]); if (!tr.content) throw new Error("No transcript was returned for this video."); status.textContent = "Cleaning transcript…"; const text = cleanSegments(tr.content, $("mode").value === "exact"); preview.textContent = text.slice(0, 4000) + (text.length > 4000 ? "\n\n…" : ""); preview.style.display = "block"; status.textContent = "Building Word document…"; const title = meta.title || "YouTube Transcript"; const channel = (meta.channel && (meta.channel.name || meta.channel.title)) || meta.author || ""; const blob = await makeDocx(title, channel, videoUrl, text); const safe = title.replace(/[\\/:*?\"<>|]+/g,"").replace(/\s+/g," ").trim().slice(0,90) || "YouTube Transcript"; const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = safe + ".docx"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); status.textContent = "Done — your Word document has been created."; } catch (e) { status.textContent = e.message || "Something went wrong."; } finally { btn.disabled = false; } };
+$("save").onclick = () => {
+  localStorage.setItem("supadata_key", $("key").value.trim());
+  $("status").textContent = "API key saved on this device.";
+};
+
+function normalizeUrl(s) {
+  try {
+    const u = new URL(s.trim());
+    if (!/youtube\.com|youtu\.be/.test(u.hostname)) throw new Error();
+    return u.toString();
+  } catch { throw new Error("Paste a valid YouTube link."); }
+}
+
+function getVideoId(url) {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) return u.pathname.split("/").filter(Boolean)[0] || "video";
+    if (u.searchParams.get("v")) return u.searchParams.get("v");
+    const parts = u.pathname.split("/").filter(Boolean);
+    const i = parts.findIndex(x => ["shorts","embed","live"].includes(x));
+    if (i >= 0 && parts[i+1]) return parts[i+1];
+  } catch {}
+  return "video";
+}
+
+function cleanSegments(content, exact=false) {
+  const raw = Array.isArray(content) ? content.map(x => typeof x === "string" ? x : (x.text || "")) : [String(content || "")];
+  const lines = [];
+  let prev = "";
+  for (let t of raw) {
+    t = t.replace(/\s+/g," ").trim();
+    if (!t) continue;
+    if (!exact && /^\[(music|applause|laughter|silence|foreign)\]$/i.test(t)) continue;
+    if (t === prev) continue;
+    prev = t;
+    lines.push(t);
+  }
+  if (exact) return lines.join("\n");
+  let text = lines.join(" ").replace(/\s+([,.;!?])/g,"$1").replace(/([.!?])\s+/g,"$1\n\n");
+  if (text.split("\n\n").length < 3 && text.length > 700) {
+    const words = text.split(/\s+/), paras = [];
+    for (let i=0;i<words.length;i+=110) paras.push(words.slice(i,i+110).join(" "));
+    text = paras.join("\n\n");
+  }
+  return text.trim();
+}
+
+async function apiJson(url,key) {
+  const r = await fetch(url,{headers:{"x-api-key":key}});
+  let data = {};
+  try { data = await r.json(); } catch {}
+  if (!r.ok) throw new Error(data.message || data.error || `API error ${r.status}`);
+  return data;
+}
+
+function safeFileName(s) {
+  return String(s || "Transcript").replace(/[\\/:*?\"<>|]+/g,"").replace(/\s+/g," ").trim().slice(0,100) || "Transcript";
+}
+
+function makePdf(title,channel,sourceUrl,transcript,videoId) {
+  if (!window.jspdf) throw new Error("PDF library did not load. Check your internet connection.");
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:"mm",format:"a4",compress:true});
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const left = 18, right = 18, top = 20, bottom = 18;
+  const textW = pageW - left - right;
+  let y = top;
+
+  doc.setProperties({
+    title: title,
+    subject: "YouTube transcript",
+    author: channel || "",
+    creator: "YouTube → PDF"
+  });
+
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(18);
+  const titleLines = doc.splitTextToSize(title,textW);
+  doc.text(titleLines,left,y);
+  y += titleLines.length * 7 + 2;
+
+  doc.setFont("helvetica","normal");
+  doc.setTextColor(100);
+  doc.setFontSize(9);
+  if (channel) { doc.text(channel,left,y); y += 5; }
+  const urlLines = doc.splitTextToSize(sourceUrl,textW);
+  doc.text(urlLines,left,y);
+  y += urlLines.length * 4 + 8;
+
+  doc.setTextColor(20);
+  doc.setFontSize(11);
+  const paragraphs = transcript.split(/\n{2,}/).map(x=>x.trim()).filter(Boolean);
+
+  for (const para of paragraphs) {
+    const lines = doc.splitTextToSize(para,textW);
+    for (const line of lines) {
+      if (y > pageH - bottom) {
+        doc.addPage();
+        y = top;
+      }
+      doc.text(line,left,y);
+      y += 5.4;
+    }
+    y += 3.2;
+  }
+
+  const filename = `${safeFileName(title)} - ${videoId}.pdf`;
+  doc.save(filename);
+}
+
+$("go").onclick = async () => {
+  const btn=$("go"), status=$("status"), preview=$("preview");
+  preview.style.display="none";
+  try {
+    const videoUrl = normalizeUrl($("url").value);
+    const videoId = getVideoId(videoUrl);
+    const key = $("key").value.trim() || localStorage.getItem("supadata_key") || "";
+    if (!key) throw new Error("Open API key settings and paste your Supadata API key first.");
+    localStorage.setItem("supadata_key",key);
+
+    btn.disabled=true;
+    status.textContent="Getting captions…";
+    const lang=$("lang").value.trim() || "en";
+    const transcriptUrl="https://api.supadata.ai/v1/transcript?url="+encodeURIComponent(videoUrl)+"&lang="+encodeURIComponent(lang);
+    const metadataUrl="https://api.supadata.ai/v1/metadata?url="+encodeURIComponent(videoUrl);
+    const [tr,meta] = await Promise.all([
+      apiJson(transcriptUrl,key),
+      apiJson(metadataUrl,key).catch(()=>({}))
+    ]);
+    if (!tr.content) throw new Error("No transcript was returned for this video.");
+
+    status.textContent="Cleaning transcript…";
+    const text=cleanSegments(tr.content,$("mode").value==="exact");
+    preview.textContent=text.slice(0,4000)+(text.length>4000?"\n\n…":"");
+    preview.style.display="block";
+
+    const channel=(meta.channel && (meta.channel.name || meta.channel.title)) || meta.author || "";
+    const title=(meta.title && String(meta.title).trim()) || `YouTube Transcript — ${videoId}`;
+
+    status.textContent=`Building “${title}”…`;
+    makePdf(title,channel,videoUrl,text,videoId);
+    status.textContent="Done — your PDF has been created.";
+  } catch(e) {
+    status.textContent=e.message || "Something went wrong.";
+  } finally {
+    btn.disabled=false;
+  }
+};
 </script>
 </body>
 </html>
