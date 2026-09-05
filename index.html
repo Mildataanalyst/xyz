@@ -6,47 +6,60 @@
   <meta name="theme-color" content="#111111" />
   <title>YouTube → PDF</title>
   <style>
-    :root{--bg:#f7f7f5;--card:#fff;--text:#111;--muted:#707070;--border:#deded9;--soft:#efefeb;--accent:#111}
+    :root{
+      --bg:#f7f7f5;--card:#fff;--text:#111;--muted:#707070;--border:#deded9;
+      --soft:#efefeb;--accent:#111;--success:#2f7a4a;--danger:#a34343
+    }
     *{box-sizing:border-box}
     body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:24px 16px 48px}
-    main{width:min(580px,100%);margin:0 auto}
+    main{width:min(600px,100%);margin:0 auto}
     h1{font-size:34px;line-height:1.05;letter-spacing:-1.4px;margin:0 0 8px}
     h2{font-size:19px;letter-spacing:-.35px;margin:0}
     .sub{color:var(--muted);font-size:15px;line-height:1.5;margin:0 0 20px}
     .card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.04)}
-    .tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--soft);border-radius:13px;padding:3px;margin-bottom:18px}
-    .tab{margin:0;background:transparent;color:#555;padding:10px 8px;border-radius:10px}
-    .tab.active{background:#fff;color:#111;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    .tabs,.subtabs{display:grid;background:var(--soft);border-radius:13px;padding:3px;gap:3px}
+    .tabs{grid-template-columns:1fr 1fr;margin-bottom:18px}
+    .subtabs{grid-template-columns:1fr 1fr;margin-bottom:14px}
+    button{width:100%;border:0;border-radius:14px;padding:14px 18px;background:var(--accent);color:#fff;font:inherit;font-weight:750;cursor:pointer;margin-top:4px;transition:transform .08s ease,opacity .15s ease,background .15s ease}
+    button:active{transform:scale(.99)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .tab,.subtab{margin:0;background:transparent;color:#555;padding:10px 8px;border-radius:10px}
+    .tab.active,.subtab.active{background:#fff;color:#111;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    .subtab{font-size:13px;padding:9px 7px}
+    .secondary{background:var(--soft);color:#111}
     label{display:block;font-size:13px;font-weight:700;margin:0 0 8px}
-    input,select{width:100%;border:1px solid var(--border);background:#fff;color:#111;border-radius:14px;font:inherit;padding:14px 15px;outline:none}
-    input:focus,select:focus{border-color:#999}
+    input,select{width:100%;border:1px solid var(--border);background:#fff;color:#111;border-radius:14px;font:inherit;padding:14px 15px;outline:none;transition:border-color .15s ease,box-shadow .15s ease}
+    input:focus,select:focus{border-color:#999;box-shadow:0 0 0 3px rgba(0,0,0,.03)}
+    input.saved{border-color:var(--success);box-shadow:0 0 0 3px rgba(47,122,74,.08)}
     .group{margin-bottom:14px}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    button{width:100%;border:0;border-radius:14px;padding:14px 18px;background:var(--accent);color:#fff;font:inherit;font-weight:700;cursor:pointer;margin-top:4px}
-    button:disabled{opacity:.5;cursor:not-allowed}
-    .secondary{background:var(--soft);color:#111}
-    .status{min-height:20px;font-size:13px;color:var(--muted);margin-top:11px;line-height:1.4}
-    .pane{display:none}.pane.active{display:block}
+    .pane,.search-mode{display:none}.pane.active,.search-mode.active{display:block}
+    .settings{margin-top:17px;padding-top:15px;border-top:1px solid var(--border)}
+    .status{min-height:22px;font-size:13px;color:var(--muted);margin-top:11px;line-height:1.4;display:flex;align-items:center;gap:7px}
+    .status.success{color:var(--success)}.status.error{color:var(--danger)}
+    .spinner{width:14px;height:14px;border:2px solid #d8d8d3;border-top-color:#555;border-radius:50%;display:inline-block;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
     .results{display:flex;flex-direction:column;gap:9px;margin-top:12px}
     .result{display:grid;grid-template-columns:92px 1fr;gap:11px;align-items:center;border:1px solid var(--border);border-radius:15px;padding:9px;background:#fff}
-    .result.channel{grid-template-columns:52px 1fr auto;cursor:pointer}
+    .result.channel{grid-template-columns:52px 1fr auto}
     .thumb{width:92px;aspect-ratio:16/9;border-radius:9px;object-fit:cover;background:#eee}
     .avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#eee}
-    .rtitle{font-size:13px;font-weight:750;line-height:1.32;margin-bottom:5px}
-    .rmeta{font-size:11px;color:var(--muted);line-height:1.35}
-    .pick{width:auto;margin:0;padding:9px 11px;border-radius:10px;font-size:12px}
-    .selected-channel{display:flex;gap:11px;align-items:center;padding:11px;border:1px solid var(--border);border-radius:15px;margin-bottom:14px}
-    .selected-channel .info{flex:1;min-width:0}.selected-channel .name{font-size:14px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .change{width:auto;margin:0;padding:8px 10px;background:transparent;color:var(--muted);border:1px solid var(--border);font-size:12px}
-    .video-btn{margin-top:9px;padding:9px 10px;border-radius:10px;font-size:12px}
+    .rtitle{font-size:13px;font-weight:780;line-height:1.32;margin-bottom:5px}
+    .rmeta{font-size:11px;color:var(--muted);line-height:1.4}
+    .pick,.video-btn,.change{width:auto;margin:0;padding:9px 11px;border-radius:10px;font-size:12px}
+    .change{background:transparent;color:var(--muted);border:1px solid var(--border)}
+    .video-btn{margin-top:9px}
+    .selected-channel{display:flex;gap:11px;align-items:center;padding:11px;border:1px solid var(--border);border-radius:15px;margin:14px 0}
+    .selected-channel .info{flex:1;min-width:0}.selected-channel .name{font-size:14px;font-weight:760;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .empty,.loading-card{color:var(--muted);font-size:13px;padding:15px 2px}
+    .loading-card{display:flex;align-items:center;gap:8px}
     details{margin-top:16px;border-top:1px solid var(--border);padding-top:15px}
     summary{cursor:pointer;color:var(--muted);font-size:13px}
     .small{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}
-    .settings{margin-top:17px;padding-top:15px;border-top:1px solid var(--border)}
     .history{margin-top:26px}.history-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
     .clear-btn{width:auto;margin:0;padding:7px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font-size:12px}
-    .history-list{display:flex;flex-direction:column;gap:9px}.history-empty{color:var(--muted);font-size:13px;padding:17px 2px}
-    .history-item{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px}.history-title{font-size:14px;line-height:1.35;font-weight:750;margin:0 0 5px;overflow-wrap:anywhere}.history-meta{color:var(--muted);font-size:11px;margin-bottom:11px}
+    .history-list{display:flex;flex-direction:column;gap:9px}.history-item{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px}
+    .history-title{font-size:14px;line-height:1.35;font-weight:760;margin:0 0 5px;overflow-wrap:anywhere}.history-meta{color:var(--muted);font-size:11px;margin-bottom:11px}
     .history-actions{display:grid;grid-template-columns:1fr auto;gap:8px}.history-download{margin:0;padding:10px 12px;border-radius:11px;font-size:13px}.history-delete{width:auto;margin:0;padding:10px 12px;border:1px solid var(--border);background:#fff;color:var(--muted);border-radius:11px;font-size:13px}
     .footer{text-align:center;color:#9a9a94;font-size:11px;margin-top:14px}
     @media(max-width:430px){.row{grid-template-columns:1fr;gap:0}h1{font-size:32px}.result{grid-template-columns:82px 1fr}.thumb{width:82px}}
@@ -55,7 +68,7 @@
 <body>
 <main>
   <h1>YouTube → PDF</h1>
-  <p class="sub">Paste a video, or search a channel and pick one.</p>
+  <p class="sub">Paste a video, search all of YouTube, or browse a channel.</p>
 
   <div class="card">
     <div class="tabs">
@@ -72,24 +85,40 @@
     </section>
 
     <section id="searchPane" class="pane">
-      <div id="channelPicker">
-        <div class="group">
-          <label for="channelQuery">Find a YouTube channel</label>
-          <input id="channelQuery" autocomplete="off" placeholder="e.g. HistoryMarche" />
-        </div>
-        <button id="findChannel" type="button">Search channels</button>
-        <div id="channelResults" class="results"></div>
+      <div class="subtabs">
+        <button id="videoSearchTab" class="subtab active" type="button">Videos</button>
+        <button id="channelSearchTab" class="subtab" type="button">Channels</button>
       </div>
 
-      <div id="channelBrowser" style="display:none">
-        <div id="selectedChannel" class="selected-channel"></div>
+      <div id="generalVideoSearch" class="search-mode active">
         <div class="group">
-          <label id="videoSearchLabel" for="videoQuery">Search this channel</label>
-          <input id="videoQuery" autocomplete="off" placeholder="Video title or topic" />
-          <div class="small">Leave blank to look for recent videos.</div>
+          <label for="generalVideoQuery">Search YouTube videos</label>
+          <input id="generalVideoQuery" autocomplete="off" placeholder="Video title, person, topic…" />
         </div>
-        <button id="findVideos" type="button">Search videos</button>
-        <div id="videoResults" class="results"></div>
+        <button id="findGeneralVideos" type="button">Search videos</button>
+        <div id="generalVideoResults" class="results"></div>
+      </div>
+
+      <div id="channelSearchMode" class="search-mode">
+        <div id="channelPicker">
+          <div class="group">
+            <label for="channelQuery">Find a YouTube channel</label>
+            <input id="channelQuery" autocomplete="off" placeholder="e.g. Founders" />
+          </div>
+          <button id="findChannel" type="button">Search channels</button>
+          <div id="channelResults" class="results"></div>
+        </div>
+
+        <div id="channelBrowser" style="display:none">
+          <div id="selectedChannel" class="selected-channel"></div>
+          <div class="group">
+            <label id="videoSearchLabel" for="videoQuery">Search this channel</label>
+            <input id="videoQuery" autocomplete="off" placeholder="Video title or topic" />
+            <div class="small">Leave blank to search recent videos from this channel.</div>
+          </div>
+          <button id="findVideos" type="button">Search this channel</button>
+          <div id="videoResults" class="results"></div>
+        </div>
       </div>
     </section>
 
@@ -108,11 +137,11 @@
 
     <div id="status" class="status"></div>
 
-    <details>
+    <details id="apiDetails">
       <summary>API key settings</summary>
       <div class="group" style="margin-top:12px">
         <label for="key">Supadata API key</label>
-        <input id="key" type="password" autocomplete="off" placeholder="Paste once; saved only on this device" />
+        <input id="key" type="password" autocomplete="off" placeholder="Paste once; saved on this device" />
         <div class="small">Saved only in this browser and sent to Supadata for search/transcript requests.</div>
       </div>
       <button id="save" class="secondary" type="button">Save key</button>
@@ -121,22 +150,50 @@
 
   <section class="history">
     <div class="history-head"><h2>History</h2><button id="clearHistory" class="clear-btn" type="button">Clear all</button></div>
-    <div id="historyList" class="history-list"><div class="history-empty">No PDFs yet.</div></div>
+    <div id="historyList" class="history-list"><div class="empty">No PDFs yet.</div></div>
   </section>
-  <div class="footer">Your selected channel and PDF history are stored on this device.</div>
+  <div class="footer">Your selected channel, API key and PDF history are stored on this device.</div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 let selectedChannel=null;
-
 $("key").value=localStorage.getItem("supadata_key")||"";
 try{selectedChannel=JSON.parse(localStorage.getItem("ytpdf_channel")||"null")}catch{}
 
-function setStatus(s){$("status").textContent=s||""}
-function getKey(){const k=$("key").value.trim()||localStorage.getItem("supadata_key")||"";if(!k)throw new Error("Open API key settings and paste your Supadata API key first.");return k}
-$("save").onclick=()=>{localStorage.setItem("supadata_key",$("key").value.trim());setStatus("API key saved on this device.")};
+function setStatus(s,type=""){
+  const el=$("status");
+  el.className="status"+(type?" "+type:"");
+  el.innerHTML=s||"";
+}
+function workingStatus(text){setStatus(`<span class="spinner"></span>${text}`)}
+function needKey(){
+  $("apiDetails").open=true;
+  $("key").focus();
+  setStatus("Add your Supadata API key first.","error");
+}
+function getKey(){
+  const k=$("key").value.trim()||localStorage.getItem("supadata_key")||"";
+  if(!k){needKey();throw new Error("API key required.");}
+  return k;
+}
+async function runBusy(button,busyText,fn){
+  const original=button.textContent;
+  button.disabled=true;
+  button.textContent=busyText;
+  try{return await fn()}finally{button.disabled=false;button.textContent=original}
+}
+
+$("save").onclick=async()=>{
+  const key=$("key").value.trim();
+  if(!key){setStatus("Paste an API key first.","error");return}
+  localStorage.setItem("supadata_key",key);
+  $("key").classList.add("saved");
+  $("save").textContent="Saved ✓";
+  setStatus("API key saved ✓","success");
+  setTimeout(()=>{$("save").textContent="Save key";$("key").classList.remove("saved")},1600);
+};
 
 function switchTab(which){
   const url=which==="url";
@@ -144,12 +201,57 @@ function switchTab(which){
   $("urlPane").classList.toggle("active",url);$("searchPane").classList.toggle("active",!url);
   setStatus("");
 }
-$("urlTab").onclick=()=>switchTab("url");$("searchTab").onclick=()=>switchTab("search");
+$("urlTab").onclick=()=>switchTab("url");
+$("searchTab").onclick=()=>switchTab("search");
 
-function normalizeUrl(s){try{const u=new URL(s.trim());if(!/youtube\.com|youtu\.be/.test(u.hostname))throw new Error();return u.toString()}catch{throw new Error("Paste a valid YouTube link.")}}
-function getVideoId(url){try{const u=new URL(url);if(u.hostname.includes("youtu.be"))return u.pathname.split("/").filter(Boolean)[0]||"video";if(u.searchParams.get("v"))return u.searchParams.get("v");const p=u.pathname.split("/").filter(Boolean),i=p.findIndex(x=>["shorts","embed","live"].includes(x));if(i>=0&&p[i+1])return p[i+1]}catch{}return"video"}
-function cleanSegments(content,exact=false){const raw=Array.isArray(content)?content.map(x=>typeof x==="string"?x:(x.text||"")):[String(content||"")],lines=[];let prev="";for(let t of raw){t=t.replace(/\s+/g," ").trim();if(!t)continue;if(!exact&&/^\[(music|applause|laughter|silence|foreign)\]$/i.test(t))continue;if(t===prev)continue;prev=t;lines.push(t)}if(exact)return lines.join("\n");let text=lines.join(" ").replace(/\s+([,.;!?])/g,"$1").replace(/([.!?])\s+/g,"$1\n\n");if(text.split("\n\n").length<3&&text.length>700){const w=text.split(/\s+/),p=[];for(let i=0;i<w.length;i+=110)p.push(w.slice(i,i+110).join(" "));text=p.join("\n\n")}return text.trim()}
-async function apiJson(url,key){const r=await fetch(url,{headers:{"x-api-key":key}});let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.message||d.error||`API error ${r.status}`);return d}
+function switchSearchMode(which){
+  const videos=which==="videos";
+  $("videoSearchTab").classList.toggle("active",videos);
+  $("channelSearchTab").classList.toggle("active",!videos);
+  $("generalVideoSearch").classList.toggle("active",videos);
+  $("channelSearchMode").classList.toggle("active",!videos);
+  setStatus("");
+}
+$("videoSearchTab").onclick=()=>switchSearchMode("videos");
+$("channelSearchTab").onclick=()=>switchSearchMode("channels");
+
+function normalizeUrl(s){
+  try{const u=new URL(s.trim());if(!/youtube\.com|youtu\.be/.test(u.hostname))throw new Error();return u.toString()}
+  catch{throw new Error("Paste a valid YouTube link.")}
+}
+function getVideoId(url){
+  try{
+    const u=new URL(url);
+    if(u.hostname.includes("youtu.be"))return u.pathname.split("/").filter(Boolean)[0]||"video";
+    if(u.searchParams.get("v"))return u.searchParams.get("v");
+    const p=u.pathname.split("/").filter(Boolean),i=p.findIndex(x=>["shorts","embed","live"].includes(x));
+    if(i>=0&&p[i+1])return p[i+1];
+  }catch{}
+  return"video"
+}
+function cleanSegments(content,exact=false){
+  const raw=Array.isArray(content)?content.map(x=>typeof x==="string"?x:(x.text||"")):[String(content||"")],lines=[];
+  let prev="";
+  for(let t of raw){
+    t=t.replace(/\s+/g," ").trim();
+    if(!t)continue;
+    if(!exact&&/^\[(music|applause|laughter|silence|foreign)\]$/i.test(t))continue;
+    if(t===prev)continue;prev=t;lines.push(t)
+  }
+  if(exact)return lines.join("\n");
+  let text=lines.join(" ").replace(/\s+([,.;!?])/g,"$1").replace(/([.!?])\s+/g,"$1\n\n");
+  if(text.split("\n\n").length<3&&text.length>700){
+    const w=text.split(/\s+/),p=[];for(let i=0;i<w.length;i+=110)p.push(w.slice(i,i+110).join(" "));
+    text=p.join("\n\n")
+  }
+  return text.trim()
+}
+async function apiJson(url,key){
+  const r=await fetch(url,{headers:{"x-api-key":key}});
+  let d={};try{d=await r.json()}catch{}
+  if(!r.ok)throw new Error(d.message||d.error||`API error ${r.status}`);
+  return d
+}
 function safeFileName(s){return String(s||"Transcript").replace(/[\\/:*?\"<>|]+/g,"").replace(/\s+/g," ").trim().slice(0,100)||"Transcript"}
 function escapeHtml(s){return String(s??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[c]))}
 function fmtDate(s){if(!s)return"";try{return new Intl.DateTimeFormat(undefined,{dateStyle:"medium"}).format(new Date(s))}catch{return""}}
@@ -157,51 +259,256 @@ function fmtDuration(sec){sec=Number(sec||0);if(!sec)return"";const h=Math.floor
 
 function makePdfBlob(title,channel,sourceUrl,transcript){
   if(!window.jspdf)throw new Error("PDF library did not load. Check your internet connection.");
-  const{jsPDF}=window.jspdf,doc=new jsPDF({unit:"mm",format:"a4",compress:true}),pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight(),left=18,right=18,top=20,bottom=18,textW=pageW-left-right;let y=top;
-  doc.setProperties({title,subject:"YouTube transcript",author:channel||"",creator:"YouTube → PDF"});doc.setFont("helvetica","bold");doc.setFontSize(18);const tl=doc.splitTextToSize(title,textW);doc.text(tl,left,y);y+=tl.length*7+2;doc.setFont("helvetica","normal");doc.setTextColor(100);doc.setFontSize(9);if(channel){doc.text(channel,left,y);y+=5}const ul=doc.splitTextToSize(sourceUrl,textW);doc.text(ul,left,y);y+=ul.length*4+8;doc.setTextColor(20);doc.setFontSize(11);
-  for(const para of transcript.split(/\n{2,}/).map(x=>x.trim()).filter(Boolean)){for(const line of doc.splitTextToSize(para,textW)){if(y>pageH-bottom){doc.addPage();y=top}doc.text(line,left,y);y+=5.4}y+=3.2}
+  const{jsPDF}=window.jspdf,doc=new jsPDF({unit:"mm",format:"a4",compress:true});
+  const pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight(),left=18,right=18,top=20,bottom=18,textW=pageW-left-right;
+  let y=top;
+  doc.setProperties({title,subject:"YouTube transcript",author:channel||"",creator:"YouTube → PDF"});
+  doc.setFont("helvetica","bold");doc.setFontSize(18);
+  const tl=doc.splitTextToSize(title,textW);doc.text(tl,left,y);y+=tl.length*7+2;
+  doc.setFont("helvetica","normal");doc.setTextColor(100);doc.setFontSize(9);
+  if(channel){doc.text(channel,left,y);y+=5}
+  const ul=doc.splitTextToSize(sourceUrl,textW);doc.text(ul,left,y);y+=ul.length*4+8;
+  doc.setTextColor(20);doc.setFontSize(11);
+  for(const para of transcript.split(/\n{2,}/).map(x=>x.trim()).filter(Boolean)){
+    for(const line of doc.splitTextToSize(para,textW)){
+      if(y>pageH-bottom){doc.addPage();y=top}
+      doc.text(line,left,y);y+=5.4
+    }
+    y+=3.2
+  }
   return doc.output("blob")
 }
-function downloadBlob(blob,filename){const href=URL.createObjectURL(blob),a=document.createElement("a");a.href=href;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),5000)}
-
-const DB_NAME="youtubePdfHistory",DB_VERSION=1,STORE="pdfs";
-function openDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(STORE)){const st=db.createObjectStore(STORE,{keyPath:"id"});st.createIndex("createdAt","createdAt")}};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
-async function historyPut(item){const db=await openDb();await new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put(item);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close();await trimHistory()}
-async function historyAll(){const db=await openDb(),items=await new Promise((res,rej)=>{const q=db.transaction(STORE,"readonly").objectStore(STORE).getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>rej(q.error)});db.close();return items.sort((a,b)=>b.createdAt-a.createdAt)}
-async function historyDelete(id){const db=await openDb();await new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).delete(id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close()}
-async function historyClear(){const db=await openDb();await new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close()}
-async function trimHistory(max=30){const x=await historyAll();for(const item of x.slice(max))await historyDelete(item.id)}
-function formatCreated(ms){return new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short"}).format(new Date(ms))}
-async function renderHistory(){const list=$("historyList"),items=await historyAll();if(!items.length){list.innerHTML='<div class="history-empty">No PDFs yet.</div>';return}list.innerHTML=items.map(i=>`<div class="history-item"><div class="history-title">${escapeHtml(i.title)}</div><div class="history-meta">${escapeHtml(formatCreated(i.createdAt))}</div><div class="history-actions"><button class="history-download" data-download="${i.id}" type="button">Download again</button><button class="history-delete" data-delete="${i.id}" type="button">Delete</button></div></div>`).join("");list.querySelectorAll("[data-download]").forEach(b=>b.onclick=async()=>{const i=(await historyAll()).find(x=>x.id===b.dataset.download);if(i?.blob)downloadBlob(i.blob,i.filename)});list.querySelectorAll("[data-delete]").forEach(b=>b.onclick=async()=>{await historyDelete(b.dataset.delete);renderHistory()})}
-$("clearHistory").onclick=async()=>{if(confirm("Clear all saved PDFs from this device?")){await historyClear();renderHistory()}};
-
-async function generatePdf(videoUrl,override=null){
-  const key=getKey(),videoId=getVideoId(videoUrl),lang=$("lang").value.trim()||"en";setStatus("Getting captions…");
-  const transcriptUrl="https://api.supadata.ai/v1/transcript?url="+encodeURIComponent(videoUrl)+"&lang="+encodeURIComponent(lang);
-  let tr,meta=override||{};
-  if(override){tr=await apiJson(transcriptUrl,key)}else{[tr,meta]=await Promise.all([apiJson(transcriptUrl,key),apiJson("https://api.supadata.ai/v1/metadata?url="+encodeURIComponent(videoUrl),key).catch(()=>({}))])}
-  if(!tr.content)throw new Error("No transcript was returned for this video.");
-  const text=cleanSegments(tr.content,$("mode").value==="exact"),channel=(meta.channel&&(meta.channel.name||meta.channel.title))||meta.author||"",title=(meta.title&&String(meta.title).trim())||`YouTube Transcript — ${videoId}`,filename=`${safeFileName(title)} - ${videoId}.pdf`;
-  setStatus(`Building “${title}”…`);const blob=makePdfBlob(title,channel,videoUrl,text);downloadBlob(blob,filename);
-  await historyPut({id:`${videoId}-${Date.now()}`,title,filename,videoUrl,createdAt:Date.now(),blob});await renderHistory();setStatus("Done — PDF created and added to History.")
+function downloadBlob(blob,filename){
+  const href=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=href;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(href),5000)
 }
 
-$("go").onclick=async()=>{const b=$("go");try{b.disabled=true;await generatePdf(normalizeUrl($("url").value))}catch(e){setStatus(e.message||"Something went wrong.")}finally{b.disabled=false}};
+const DB_NAME="youtubePdfHistory",DB_VERSION=1,STORE="pdfs";
+function openDb(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=()=>{
+      const db=req.result;
+      if(!db.objectStoreNames.contains(STORE)){
+        const st=db.createObjectStore(STORE,{keyPath:"id"});
+        st.createIndex("createdAt","createdAt")
+      }
+    };
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)
+  })
+}
+async function historyPut(item){
+  const db=await openDb();
+  await new Promise((res,rej)=>{
+    const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put(item);
+    tx.oncomplete=res;tx.onerror=()=>rej(tx.error)
+  });
+  db.close();await trimHistory()
+}
+async function historyAll(){
+  const db=await openDb();
+  const items=await new Promise((res,rej)=>{
+    const req=db.transaction(STORE,"readonly").objectStore(STORE).getAll();
+    req.onsuccess=()=>res(req.result||[]);req.onerror=()=>rej(req.error)
+  });
+  db.close();return items.sort((a,b)=>b.createdAt-a.createdAt)
+}
+async function historyDelete(id){
+  const db=await openDb();
+  await new Promise((res,rej)=>{
+    const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).delete(id);
+    tx.oncomplete=res;tx.onerror=()=>rej(tx.error)
+  });
+  db.close()
+}
+async function historyClear(){
+  const db=await openDb();
+  await new Promise((res,rej)=>{
+    const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).clear();
+    tx.oncomplete=res;tx.onerror=()=>rej(tx.error)
+  });
+  db.close()
+}
+async function trimHistory(max=30){
+  const items=await historyAll();
+  for(const item of items.slice(max))await historyDelete(item.id)
+}
+function historyDate(ms){
+  try{return new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short"}).format(new Date(ms))}
+  catch{return new Date(ms).toLocaleString()}
+}
+async function renderHistory(){
+  const list=$("historyList");
+  try{
+    const items=await historyAll();
+    if(!items.length){list.innerHTML='<div class="empty">No PDFs yet.</div>';return}
+    list.innerHTML=items.map(item=>`
+      <div class="history-item">
+        <div class="history-title">${escapeHtml(item.title)}</div>
+        <div class="history-meta">${escapeHtml(historyDate(item.createdAt))}</div>
+        <div class="history-actions">
+          <button class="history-download" data-download="${escapeHtml(item.id)}" type="button">Download again</button>
+          <button class="history-delete" data-delete="${escapeHtml(item.id)}" type="button">Delete</button>
+        </div>
+      </div>`).join("");
+    list.querySelectorAll("[data-download]").forEach(btn=>btn.onclick=async()=>{
+      const item=(await historyAll()).find(x=>x.id===btn.dataset.download);
+      if(item?.blob)downloadBlob(item.blob,item.filename)
+    });
+    list.querySelectorAll("[data-delete]").forEach(btn=>btn.onclick=async()=>{
+      await historyDelete(btn.dataset.delete);await renderHistory()
+    })
+  }catch{list.innerHTML='<div class="empty">History is unavailable in this browser.</div>'}
+}
+$("clearHistory").onclick=async()=>{await historyClear();await renderHistory();setStatus("History cleared.","success")};
+
+async function generatePdf(videoUrl,hint={}){
+  const key=getKey(),lang=$("lang").value.trim()||"en";
+  workingStatus("Getting captions…");
+  const transcriptUrl="https://api.supadata.ai/v1/transcript?url="+encodeURIComponent(videoUrl)+"&lang="+encodeURIComponent(lang);
+  const metadataUrl="https://api.supadata.ai/v1/metadata?url="+encodeURIComponent(videoUrl);
+  const [tr,meta]=await Promise.all([apiJson(transcriptUrl,key),apiJson(metadataUrl,key).catch(()=>({}))]);
+  if(!tr.content)throw new Error("No transcript was returned for this video.");
+  workingStatus("Cleaning transcript…");
+  const text=cleanSegments(tr.content,$("mode").value==="exact");
+  const videoId=getVideoId(videoUrl);
+  const hintChannel=typeof hint.channel==="string"?hint.channel:(hint.channel?.name||hint.channel?.title||"");
+  const channel=(meta.channel&&(meta.channel.name||meta.channel.title))||meta.author||hintChannel||"";
+  const title=(meta.title&&String(meta.title).trim())||(hint.title&&String(hint.title).trim())||`YouTube Transcript — ${videoId}`;
+  workingStatus(`Creating “${escapeHtml(title)}”…`);
+  const blob=makePdfBlob(title,channel,videoUrl,text);
+  const filename=`${safeFileName(title)} - ${videoId}.pdf`;
+  const item={id:`${videoId}-${Date.now()}`,title,filename,createdAt:Date.now(),blob};
+  try{await historyPut(item);await renderHistory()}catch{}
+  downloadBlob(blob,filename);
+  setStatus("PDF created and saved to History ✓","success");
+  return{title,filename}
+}
+
+$("go").onclick=async()=>{
+  const btn=$("go");
+  try{
+    const videoUrl=normalizeUrl($("url").value);
+    await runBusy(btn,"Creating PDF…",()=>generatePdf(videoUrl))
+  }catch(e){
+    if(e.message!=="API key required.")setStatus(e.message||"Could not create PDF.","error")
+  }
+};
+
+function renderVideoResults(container,results){
+  if(!results.length){container.innerHTML='<div class="empty">No videos found. Try another search.</div>';return}
+  container.innerHTML=results.map((r,i)=>`
+    <div class="result">
+      ${r.thumbnail?`<img class="thumb" src="${escapeHtml(r.thumbnail)}" alt="">`:"<div></div>"}
+      <div>
+        <div class="rtitle">${escapeHtml(r.title)}</div>
+        <div class="rmeta">${escapeHtml([r.channel?.name,fmtDate(r.uploadDate),fmtDuration(r.duration)].filter(Boolean).join(" · "))}</div>
+        <button class="video-btn" data-vi="${i}" type="button">Make PDF</button>
+      </div>
+    </div>`).join("");
+  container.querySelectorAll("[data-vi]").forEach(btn=>btn.onclick=async()=>{
+    const r=results[Number(btn.dataset.vi)],url=`https://www.youtube.com/watch?v=${encodeURIComponent(r.id)}`;
+    try{await runBusy(btn,"Creating PDF…",()=>generatePdf(url,{title:r.title,channel:r.channel}))}
+    catch(e){if(e.message!=="API key required.")setStatus(e.message||"Could not create PDF.","error")}
+  })
+}
+
+$("findGeneralVideos").onclick=async()=>{
+  const btn=$("findGeneralVideos"),q=$("generalVideoQuery").value.trim(),box=$("generalVideoResults");
+  if(!q){setStatus("Type a video title or topic first.","error");return}
+  try{
+    getKey();
+    box.innerHTML='<div class="loading-card"><span class="spinner"></span>Searching YouTube…</div>';
+    workingStatus("Searching YouTube videos…");
+    await runBusy(btn,"Searching…",async()=>{
+      const d=await apiJson(`https://api.supadata.ai/v1/youtube/search?query=${encodeURIComponent(q)}&type=video&sortBy=relevance`,getKey());
+      const results=(d.results||[]).filter(x=>x.type==="video");
+      renderVideoResults(box,results);
+      setStatus(`${results.length} video${results.length===1?"":"s"} found.`,"success")
+    })
+  }catch(e){
+    box.innerHTML="";
+    if(e.message!=="API key required.")setStatus(e.message||"Search failed.","error")
+  }
+};
 
 function showSelectedChannel(){
   const picker=$("channelPicker"),browser=$("channelBrowser");
   if(!selectedChannel){picker.style.display="block";browser.style.display="none";return}
   picker.style.display="none";browser.style.display="block";
-  $("selectedChannel").innerHTML=`${selectedChannel.thumbnail?`<img class="avatar" src="${escapeHtml(selectedChannel.thumbnail)}" alt="">`:""}<div class="info"><div class="small">Selected channel</div><div class="name">${escapeHtml(selectedChannel.name)}</div></div><button id="changeChannel" class="change" type="button">Change</button>`;
+  $("selectedChannel").innerHTML=`
+    ${selectedChannel.thumbnail?`<img class="avatar" src="${escapeHtml(selectedChannel.thumbnail)}" alt="">`:""}
+    <div class="info"><div class="small">Selected channel</div><div class="name">${escapeHtml(selectedChannel.name)}</div></div>
+    <button id="changeChannel" class="change" type="button">Change</button>`;
   $("videoSearchLabel").textContent=`Search ${selectedChannel.name}`;
-  $("changeChannel").onclick=()=>{selectedChannel=null;localStorage.removeItem("ytpdf_channel");$("channelResults").innerHTML="";$("videoResults").innerHTML="";showSelectedChannel()}
+  $("changeChannel").onclick=()=>{
+    selectedChannel=null;localStorage.removeItem("ytpdf_channel");
+    $("channelResults").innerHTML="";$("videoResults").innerHTML="";
+    showSelectedChannel();setStatus("")
+  }
 }
 
-$("findChannel").onclick=async()=>{const b=$("findChannel"),q=$("channelQuery").value.trim();if(!q){setStatus("Type a channel name first.");return}try{b.disabled=true;setStatus("Searching channels…");const d=await apiJson(`https://api.supadata.ai/v1/youtube/search?query=${encodeURIComponent(q)}&type=channel`,getKey()),results=(d.results||[]).filter(x=>x.type==="channel");if(!results.length){$("channelResults").innerHTML='<div class="history-empty">No channels found.</div>';setStatus("");return}$("channelResults").innerHTML=results.map((r,i)=>`<div class="result channel" data-ci="${i}">${r.thumbnail?`<img class="avatar" src="${escapeHtml(r.thumbnail)}" alt="">`:"<div></div>"}<div><div class="rtitle">${escapeHtml(r.title)}</div><div class="rmeta">${r.subscriberCount?Number(r.subscriberCount).toLocaleString()+" subscribers":"YouTube channel"}</div></div><button class="pick" type="button">Select</button></div>`).join("");$("channelResults").querySelectorAll("[data-ci]").forEach(el=>el.onclick=()=>{const r=results[Number(el.dataset.ci)];selectedChannel={id:r.id,name:r.title,thumbnail:r.thumbnail||""};localStorage.setItem("ytpdf_channel",JSON.stringify(selectedChannel));showSelectedChannel();setStatus(`Selected ${selectedChannel.name}.`) });setStatus("")}catch(e){setStatus(e.message||"Search failed.")}finally{b.disabled=false}};
+$("findChannel").onclick=async()=>{
+  const btn=$("findChannel"),q=$("channelQuery").value.trim(),box=$("channelResults");
+  if(!q){setStatus("Type a channel name first.","error");return}
+  try{
+    getKey();
+    box.innerHTML='<div class="loading-card"><span class="spinner"></span>Searching channels…</div>';
+    workingStatus("Searching channels…");
+    await runBusy(btn,"Searching…",async()=>{
+      const d=await apiJson(`https://api.supadata.ai/v1/youtube/search?query=${encodeURIComponent(q)}&type=channel`,getKey());
+      const results=(d.results||[]).filter(x=>x.type==="channel");
+      if(!results.length){box.innerHTML='<div class="empty">No channels found.</div>';setStatus("No channels found.");return}
+      box.innerHTML=results.map((r,i)=>`
+        <div class="result channel" data-ci="${i}">
+          ${r.thumbnail?`<img class="avatar" src="${escapeHtml(r.thumbnail)}" alt="">`:"<div></div>"}
+          <div><div class="rtitle">${escapeHtml(r.title)}</div><div class="rmeta">${r.subscriberCount?Number(r.subscriberCount).toLocaleString()+" subscribers":"YouTube channel"}</div></div>
+          <button class="pick" type="button">Select</button>
+        </div>`).join("");
+      box.querySelectorAll("[data-ci]").forEach(el=>el.onclick=()=>{
+        const r=results[Number(el.dataset.ci)];
+        selectedChannel={id:r.id,name:r.title,thumbnail:r.thumbnail||""};
+        localStorage.setItem("ytpdf_channel",JSON.stringify(selectedChannel));
+        showSelectedChannel();setStatus(`Selected ${selectedChannel.name} ✓`,"success")
+      });
+      setStatus(`${results.length} channel${results.length===1?"":"s"} found.`,"success")
+    })
+  }catch(e){
+    box.innerHTML="";
+    if(e.message!=="API key required.")setStatus(e.message||"Search failed.","error")
+  }
+};
 
-$("findVideos").onclick=async()=>{const b=$("findVideos");if(!selectedChannel)return;try{b.disabled=true;setStatus(`Searching ${selectedChannel.name}…`);const term=$("videoQuery").value.trim(),q=[selectedChannel.name,term].filter(Boolean).join(" "),sort=term?"relevance":"date",d=await apiJson(`https://api.supadata.ai/v1/youtube/search?query=${encodeURIComponent(q)}&type=video&sortBy=${sort}`,getKey()),all=(d.results||[]).filter(x=>x.type==="video"),results=all.filter(x=>x.channel?.id===selectedChannel.id||String(x.channel?.name||"").toLowerCase()===selectedChannel.name.toLowerCase());if(!results.length){$("videoResults").innerHTML='<div class="history-empty">No matching videos from this channel in the first search page. Try a more specific title or topic.</div>';setStatus("");return}$("videoResults").innerHTML=results.map((r,i)=>`<div class="result">${r.thumbnail?`<img class="thumb" src="${escapeHtml(r.thumbnail)}" alt="">`:"<div></div>"}<div><div class="rtitle">${escapeHtml(r.title)}</div><div class="rmeta">${[fmtDate(r.uploadDate),fmtDuration(r.duration)].filter(Boolean).join(" · ")}</div><button class="video-btn" data-vi="${i}" type="button">Make PDF</button></div></div>`).join("");$("videoResults").querySelectorAll("[data-vi]").forEach(btn=>btn.onclick=async ev=>{ev.stopPropagation();const r=results[Number(btn.dataset.vi)],url=`https://www.youtube.com/watch?v=${encodeURIComponent(r.id)}`;try{btn.disabled=true;await generatePdf(url,{title:r.title,channel:r.channel||selectedChannel})}catch(e){setStatus(e.message||"Could not create PDF.")}finally{btn.disabled=false}});setStatus(`${results.length} video${results.length===1?"":"s"} found.`)}catch(e){setStatus(e.message||"Search failed.")}finally{b.disabled=false}};
+$("findVideos").onclick=async()=>{
+  const btn=$("findVideos"),box=$("videoResults");
+  if(!selectedChannel)return;
+  try{
+    getKey();
+    const term=$("videoQuery").value.trim();
+    box.innerHTML=`<div class="loading-card"><span class="spinner"></span>Searching ${escapeHtml(selectedChannel.name)}…</div>`;
+    workingStatus(`Searching ${escapeHtml(selectedChannel.name)}…`);
+    await runBusy(btn,"Searching…",async()=>{
+      const q=[selectedChannel.name,term].filter(Boolean).join(" ");
+      const sort=term?"relevance":"date";
+      const d=await apiJson(`https://api.supadata.ai/v1/youtube/search?query=${encodeURIComponent(q)}&type=video&sortBy=${sort}`,getKey());
+      const all=(d.results||[]).filter(x=>x.type==="video");
+      const results=all.filter(x=>x.channel?.id===selectedChannel.id||String(x.channel?.name||"").toLowerCase()===selectedChannel.name.toLowerCase());
+      renderVideoResults(box,results);
+      setStatus(`${results.length} video${results.length===1?"":"s"} found in ${selectedChannel.name}.`,results.length?"success":"")
+    })
+  }catch(e){
+    box.innerHTML="";
+    if(e.message!=="API key required.")setStatus(e.message||"Search failed.","error")
+  }
+};
 
-showSelectedChannel();renderHistory();
+$("generalVideoQuery").addEventListener("keydown",e=>{if(e.key==="Enter")$("findGeneralVideos").click()});
+$("channelQuery").addEventListener("keydown",e=>{if(e.key==="Enter")$("findChannel").click()});
+$("videoQuery").addEventListener("keydown",e=>{if(e.key==="Enter")$("findVideos").click()});
+
+showSelectedChannel();
+renderHistory();
 </script>
 </body>
 </html>
